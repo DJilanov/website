@@ -80,6 +80,13 @@ body[data-embedded='jilanov-store'] .hero {
   min-height: auto;
 }
 
+body[data-embedded='jilanov-store'] .side-nav {
+  position: absolute;
+  top: var(--embedded-viewport-top, 0);
+  bottom: auto;
+  height: var(--embedded-viewport-height, 720px);
+}
+
 .case-modal-layer {
   pointer-events: none;
   position: absolute;
@@ -109,8 +116,9 @@ body[data-embedded='jilanov-store'] .hero {
   pointer-events: auto;
   position: relative;
   z-index: 1;
-  width: min(1120px, calc(100vw - 28px));
-  height: 100%;
+  width: min(980px, calc(100vw - 48px));
+  height: min(100%, 760px);
+  max-height: 100%;
   overflow: auto;
   overscroll-behavior: contain;
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -124,17 +132,84 @@ body[data-embedded='jilanov-store'] .hero {
 }
 
 .case-modal-panel .case-main {
-  width: min(1000px, calc(100% - 42px));
-  padding: 44px 0 58px;
+  width: min(940px, calc(100% - 42px));
+  padding: 32px 0 46px;
+}
+
+.case-modal-panel .case-topbar {
+  min-height: 54px;
+  padding: 8px 18px;
+}
+
+.case-modal-panel .case-hero-section {
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 360px);
+  gap: 28px;
+}
+
+.case-modal-panel .case-logo-row {
+  min-height: 42px;
+}
+
+.case-modal-panel .case-logo-row img {
+  max-width: 135px;
+  max-height: 40px;
+}
+
+.case-modal-panel .case-eyebrow {
+  margin-top: 18px;
+  font-size: 0.7rem;
 }
 
 .case-modal-panel .case-hero-copy h1,
 .case-modal-panel .case-empty h1 {
-  font-size: clamp(2.05rem, 5vw, 4.6rem);
+  font-size: clamp(1.55rem, 2vw, 2.15rem);
+  line-height: 1.08;
+}
+
+.case-modal-panel .case-lead,
+.case-modal-panel .case-empty p {
+  margin-top: 16px;
+  font-size: 0.96rem;
+  line-height: 1.65;
+}
+
+.case-modal-panel .case-meta,
+.case-modal-panel .case-fact-grid {
+  margin-top: 18px;
+}
+
+.case-modal-panel .case-architecture-panel {
+  padding: 16px;
+}
+
+.case-modal-panel .case-architecture-panel .architecture-diagram {
+  min-height: 270px;
 }
 
 .case-modal-panel .case-layout {
-  margin-top: 54px;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  margin-top: 44px;
+}
+
+.case-modal-panel .case-article {
+  gap: 32px;
+}
+
+.case-modal-panel .case-block h2,
+.case-modal-panel .case-cta h2 {
+  font-size: 1.55rem;
+}
+
+.case-modal-panel .case-block p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.case-modal-panel .case-cta {
+  margin-top: 46px;
+  padding: 22px;
 }
 
 .topbar {

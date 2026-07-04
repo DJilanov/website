@@ -1029,6 +1029,7 @@ function useEmbeddedViewport() {
     top: 0,
     height: 720,
     width: window.innerWidth || 1200,
+    topInset: 0,
   }));
 
   useEffect(() => {
@@ -1044,18 +1045,26 @@ function useEmbeddedViewport() {
       const top = Number(event.data.top);
       const height = Number(event.data.height);
       const width = Number(event.data.width);
-      if (!Number.isFinite(top) || !Number.isFinite(height) || !Number.isFinite(width)) return;
+      const topInset = Number(event.data.topInset || 0);
+      if (
+        !Number.isFinite(top) ||
+        !Number.isFinite(height) ||
+        !Number.isFinite(width) ||
+        !Number.isFinite(topInset)
+      ) return;
 
       const nextViewport = {
         top: Math.max(0, Math.round(top)),
         height: clamp(Math.round(height), 360, 1400),
         width: clamp(Math.round(width), 320, 2400),
+        topInset: clamp(Math.round(topInset), 0, 220),
       };
 
       setViewport((current) => (
         current.top === nextViewport.top &&
         current.height === nextViewport.height &&
-        current.width === nextViewport.width
+        current.width === nextViewport.width &&
+        current.topInset === nextViewport.topInset
           ? current
           : nextViewport
       ));
@@ -1064,6 +1073,28 @@ function useEmbeddedViewport() {
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, []);
+
+  useEffect(() => {
+    if (window.parent === window || !isStoreEmbed()) return undefined;
+
+    const root = document.documentElement;
+    const body = document.body;
+    root.style.setProperty('--embedded-viewport-top', `${viewport.top}px`);
+    root.style.setProperty('--embedded-viewport-height', `${viewport.height}px`);
+    root.style.setProperty('--embedded-viewport-width', `${viewport.width}px`);
+    body.style.setProperty('--embedded-viewport-top', `${viewport.top}px`);
+    body.style.setProperty('--embedded-viewport-height', `${viewport.height}px`);
+    body.style.setProperty('--embedded-viewport-width', `${viewport.width}px`);
+
+    return () => {
+      root.style.removeProperty('--embedded-viewport-top');
+      root.style.removeProperty('--embedded-viewport-height');
+      root.style.removeProperty('--embedded-viewport-width');
+      body.style.removeProperty('--embedded-viewport-top');
+      body.style.removeProperty('--embedded-viewport-height');
+      body.style.removeProperty('--embedded-viewport-width');
+    };
+  }, [viewport]);
 
   return viewport;
 }

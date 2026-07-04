@@ -34,6 +34,24 @@ import {
 } from 'lucide-react';
 import './styles.css';
 
+const STORE_EMBED_MODE = 'jilanov-store';
+const STORE_VIEWPORT_MESSAGE = 'jilanov-store:frame-viewport';
+const STORE_PARENT_ORIGIN_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
+
+function isStoreEmbed() {
+  return new URLSearchParams(window.location.search).get('embed') === STORE_EMBED_MODE;
+}
+
+function isAllowedStoreParentOrigin(origin) {
+  return origin === 'https://jilanov.com' ||
+    origin === 'https://www.jilanov.com' ||
+    STORE_PARENT_ORIGIN_PATTERN.test(origin);
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 const navItems = [
   ['00', 'Intro', '#hero'],
   ['01', 'Work', '#work'],
@@ -880,15 +898,32 @@ function postEmbeddedHeight() {
   );
 }
 
+function postEmbeddedScrollTo(targetId) {
+  if (window.parent === window || !isStoreEmbed()) return false;
+
+  const target = document.getElementById(targetId);
+  if (!target) return false;
+
+  const top = Math.max(0, Math.round(target.getBoundingClientRect().top + window.scrollY));
+  window.parent.postMessage(
+    {
+      type: 'jilanov-engineering:scroll-to',
+      top,
+    },
+    embeddedTargetOrigin(),
+  );
+  return true;
+}
+
 function useEmbeddedFrameHeight() {
   useEffect(() => {
     if (window.parent === window) return undefined;
-    if (new URLSearchParams(window.location.search).get('embed') !== 'jilanov-store') {
+    if (!isStoreEmbed()) {
       return undefined;
     }
 
-    document.documentElement.dataset.embedded = 'jilanov-store';
-    document.body.dataset.embedded = 'jilanov-store';
+    document.documentElement.dataset.embedded = STORE_EMBED_MODE;
+    document.body.dataset.embedded = STORE_EMBED_MODE;
 
     let frame = 0;
     const schedulePost = () => {
@@ -921,6 +956,50 @@ function useEmbeddedFrameHeight() {
   }, []);
 }
 
+function useEmbeddedViewport() {
+  const [viewport, setViewport] = useState(() => ({
+    top: 0,
+    height: 720,
+    width: window.innerWidth || 1200,
+  }));
+
+  useEffect(() => {
+    if (window.parent === window || !isStoreEmbed()) return undefined;
+
+    const handleMessage = (event) => {
+      if (event.source !== window.parent) return;
+      if (!isAllowedStoreParentOrigin(event.origin)) return;
+      if (!event.data || typeof event.data !== 'object' || event.data.type !== STORE_VIEWPORT_MESSAGE) {
+        return;
+      }
+
+      const top = Number(event.data.top);
+      const height = Number(event.data.height);
+      const width = Number(event.data.width);
+      if (!Number.isFinite(top) || !Number.isFinite(height) || !Number.isFinite(width)) return;
+
+      const nextViewport = {
+        top: Math.max(0, Math.round(top)),
+        height: clamp(Math.round(height), 360, 1400),
+        width: clamp(Math.round(width), 320, 2400),
+      };
+
+      setViewport((current) => (
+        current.top === nextViewport.top &&
+        current.height === nextViewport.height &&
+        current.width === nextViewport.width
+          ? current
+          : nextViewport
+      ));
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  return viewport;
+}
+
 function App() {
   const isAdmin = window.location.pathname.startsWith('/admin');
   const caseStudySlug = window.location.pathname.match(/^\/case-studies\/([^/]+)/)?.[1];
@@ -933,8 +1012,74 @@ function App() {
 function PublicSite() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(navItems[0][2]);
+  const [activeCaseStudySlug, setActiveCaseStudySlug] = useState(null);
+  const embeddedViewport = useEmbeddedViewport();
+  const activeCaseStudyRef = useRef(null);
+  const modalHistoryRef = useRef(false);
+  const embedded = isStoreEmbed();
 
   useActiveSection(setActiveSection);
+
+  useEffect(() => {
+    activeCaseStudyRef.current = activeCaseStudySlug;
+  }, [activeCaseStudySlug]);
+
+  useEffect(() => {
+    if (!embedded) return undefined;
+
+    const handlePopState = () => {
+      if (!activeCaseStudyRef.current) return;
+      activeCaseStudyRef.current = null;
+      modalHistoryRef.current = false;
+      setActiveCaseStudySlug(null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [embedded]);
+
+  const openCaseStudy = (slug) => {
+    if (!embedded) return;
+    setActiveCaseStudySlug(slug);
+    activeCaseStudyRef.current = slug;
+    modalHistoryRef.current = true;
+    window.history.pushState(
+      { jilanovCaseStudy: slug },
+      '',
+      `${window.location.pathname}${window.location.search}#case-study-${slug}`,
+    );
+  };
+  const clearCaseStudyHash = () => {
+    if (!window.location.hash.startsWith('#case-study-')) return;
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}`);
+  };
+
+  const closeCaseStudy = () => {
+    if (modalHistoryRef.current) {
+      modalHistoryRef.current = false;
+      window.history.back();
+      window.setTimeout(() => {
+        if (!activeCaseStudyRef.current) return;
+        activeCaseStudyRef.current = null;
+        setActiveCaseStudySlug(null);
+        clearCaseStudyHash();
+      }, 120);
+      return;
+    }
+
+    activeCaseStudyRef.current = null;
+    setActiveCaseStudySlug(null);
+    clearCaseStudyHash();
+  };
+
+  const closeCaseStudyAndScrollToContact = () => {
+    closeCaseStudy();
+    window.setTimeout(() => {
+      if (!postEmbeddedScrollTo('contact')) {
+        document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 140);
+  };
 
   return (
     <div className="site-shell">
@@ -944,12 +1089,20 @@ function PublicSite() {
       <main className="main-content">
         <Hero />
         <Metrics />
-        <Work />
+        <Work onOpenCaseStudy={embedded ? openCaseStudy : undefined} />
         <AISection />
         <BuildSection />
         <StackSection />
         <Contact />
       </main>
+      {activeCaseStudySlug && (
+        <CaseStudyOverlay
+          slug={activeCaseStudySlug}
+          viewport={embeddedViewport}
+          onClose={closeCaseStudy}
+          onContact={closeCaseStudyAndScrollToContact}
+        />
+      )}
     </div>
   );
 }
@@ -1064,36 +1217,57 @@ function MobileNav({ activeSection, menuOpen, setMenuOpen }) {
   );
 }
 
-function CaseStudyPage({ slug }) {
+function CaseStudyPage({ slug, embeddedOverlay = false, onClose, onContact }) {
   const project = projects.find((item) => item.slug === slug);
   const study = project ? caseStudies[project.slug] : null;
+  const renderBackControl = (track) => embeddedOverlay ? (
+    <button type="button" className="case-back" onClick={onClose} data-track={track}>
+      <ArrowLeft size={16} /> Back to selected work
+    </button>
+  ) : (
+    <a href="/#work" className="case-back" data-track={track}>
+      <ArrowLeft size={16} /> Back to selected work
+    </a>
+  );
+  const renderContactControl = (className, track, label, iconSize = 15) => embeddedOverlay ? (
+    <button type="button" className={className} onClick={onContact} data-track={track}>
+      {label} <ArrowRight size={iconSize} />
+    </button>
+  ) : (
+    <a className={className} href="/#contact" data-track={track}>
+      {label} <ArrowRight size={iconSize} />
+    </a>
+  );
 
   useEffect(() => {
+    if (embeddedOverlay) return;
     window.scrollTo(0, 0);
     document.title = study
       ? `${study.title} · Jilanov Engineering`
       : 'Case study not found · Jilanov Engineering';
-  }, [slug, study]);
+  }, [slug, study, embeddedOverlay]);
 
   if (!project || !study) {
     return (
       <div className="case-study-page">
         <header className="case-topbar">
-          <a href="/#work" className="case-back">
-            <ArrowLeft size={16} /> Back to selected work
-          </a>
-          <a href="/#contact" className="secondary-button">
-            Start a project <ArrowRight size={15} />
-          </a>
+          {renderBackControl('case-back-work')}
+          {renderContactControl('secondary-button', 'case-contact-missing', 'Start a project')}
         </header>
         <main className="case-main">
           <section className="case-empty">
             <p className="case-eyebrow">Case study</p>
             <h1>Case study not found.</h1>
             <p>The selected project page does not exist. Go back to the work section and choose a project.</p>
-            <a className="primary-button" href="/#work">
-              View selected work <ArrowRight size={16} />
-            </a>
+            {embeddedOverlay ? (
+              <button type="button" className="primary-button" onClick={onClose}>
+                View selected work <ArrowRight size={16} />
+              </button>
+            ) : (
+              <a className="primary-button" href="/#work">
+                View selected work <ArrowRight size={16} />
+              </a>
+            )}
           </section>
         </main>
       </div>
@@ -1103,18 +1277,14 @@ function CaseStudyPage({ slug }) {
   return (
     <div className="case-study-page">
       <header className="case-topbar">
-        <a href="/#work" className="case-back" data-track="case-back-work">
-          <ArrowLeft size={16} /> Back to selected work
-        </a>
+        {renderBackControl('case-back-work')}
         <div>
           {project.proof && (
             <a href={project.proof} target="_blank" rel="noreferrer" data-track={`case-proof-${project.company}`}>
               Proof <ExternalLink size={14} />
             </a>
           )}
-          <a href="/#contact" className="secondary-button" data-track={`case-contact-${project.company}`}>
-            Start a project <ArrowRight size={15} />
-          </a>
+          {renderContactControl('secondary-button', `case-contact-${project.company}`, 'Start a project')}
         </div>
       </header>
 
@@ -1222,11 +1392,47 @@ function CaseStudyPage({ slug }) {
               AI workflow and launch path around a focused product build.
             </p>
           </div>
-          <a className="primary-button" href="/#contact" data-track={`case-final-cta-${project.company}`}>
-            Discuss your project <ArrowRight size={16} />
-          </a>
+          {renderContactControl('primary-button', `case-final-cta-${project.company}`, 'Discuss your project', 16)}
         </section>
       </main>
+    </div>
+  );
+}
+
+function CaseStudyOverlay({ slug, viewport, onClose, onContact }) {
+  const project = projects.find((item) => item.slug === slug);
+  const title = project ? `${project.company} case study` : 'Case study';
+
+  useEffect(() => {
+    document.body.dataset.caseModal = 'open';
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      delete document.body.dataset.caseModal;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="case-modal-layer"
+      style={{
+        '--case-modal-top': `${viewport.top}px`,
+        '--case-modal-height': `${viewport.height}px`,
+      }}
+    >
+      <button
+        type="button"
+        className="case-modal-backdrop"
+        aria-label="Close case study"
+        onClick={onClose}
+      />
+      <div className="case-modal-panel" role="dialog" aria-modal="true" aria-label={title}>
+        <CaseStudyPage slug={slug} embeddedOverlay onClose={onClose} onContact={onContact} />
+      </div>
     </div>
   );
 }
@@ -1316,7 +1522,7 @@ function Metrics() {
   );
 }
 
-function Work() {
+function Work({ onOpenCaseStudy }) {
   return (
     <section id="work" className="section">
       <SectionHeader number="01" title="Selected Work">
@@ -1373,6 +1579,10 @@ function Work() {
                   className="secondary-button"
                   href={`/case-studies/${project.slug}`}
                   data-track={`case-study-${project.company}`}
+                  onClick={onOpenCaseStudy ? (event) => {
+                    event.preventDefault();
+                    onOpenCaseStudy(project.slug);
+                  } : undefined}
                 >
                   Read the case study <ArrowRight size={15} />
                 </a>

@@ -849,10 +849,83 @@ function useAnalytics() {
   }, []);
 }
 
+function embeddedTargetOrigin() {
+  try {
+    return document.referrer ? new URL(document.referrer).origin : '*';
+  } catch {
+    return '*';
+  }
+}
+
+function postEmbeddedHeight() {
+  if (window.parent === window) return;
+
+  const height = Math.ceil(
+    Math.max(
+      document.body.scrollHeight,
+      document.body.offsetHeight,
+      document.documentElement.scrollHeight,
+      document.documentElement.offsetHeight,
+    ),
+  );
+
+  if (!Number.isFinite(height) || height <= 0) return;
+
+  window.parent.postMessage(
+    {
+      type: 'jilanov-engineering:frame-height',
+      height,
+    },
+    embeddedTargetOrigin(),
+  );
+}
+
+function useEmbeddedFrameHeight() {
+  useEffect(() => {
+    if (window.parent === window) return undefined;
+    if (new URLSearchParams(window.location.search).get('embed') !== 'jilanov-store') {
+      return undefined;
+    }
+
+    document.documentElement.dataset.embedded = 'jilanov-store';
+    document.body.dataset.embedded = 'jilanov-store';
+
+    let frame = 0;
+    const schedulePost = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        postEmbeddedHeight();
+      });
+    };
+
+    const observer = new ResizeObserver(schedulePost);
+    observer.observe(document.documentElement);
+    observer.observe(document.body);
+
+    schedulePost();
+    window.addEventListener('load', schedulePost);
+    window.addEventListener('resize', schedulePost);
+    document.fonts?.ready.then(schedulePost).catch(() => undefined);
+    const interval = window.setInterval(schedulePost, 1000);
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('load', schedulePost);
+      window.removeEventListener('resize', schedulePost);
+      window.clearInterval(interval);
+      delete document.documentElement.dataset.embedded;
+      delete document.body.dataset.embedded;
+    };
+  }, []);
+}
+
 function App() {
   const isAdmin = window.location.pathname.startsWith('/admin');
   const caseStudySlug = window.location.pathname.match(/^\/case-studies\/([^/]+)/)?.[1];
   useAnalytics();
+  useEmbeddedFrameHeight();
   if (caseStudySlug) return <CaseStudyPage slug={decodeURIComponent(caseStudySlug)} />;
   return isAdmin ? <AdminApp /> : <PublicSite />;
 }

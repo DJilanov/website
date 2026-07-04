@@ -37,6 +37,7 @@ import './styles.css';
 const STORE_EMBED_MODE = 'jilanov-store';
 const STORE_VIEWPORT_MESSAGE = 'jilanov-store:frame-viewport';
 const STORE_PARENT_ORIGIN_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
+const CASE_STUDY_RETURN_KEY = 'jilanov-case-study-return';
 
 function isStoreEmbed() {
   return new URLSearchParams(window.location.search).get('embed') === STORE_EMBED_MODE;
@@ -50,6 +51,73 @@ function isAllowedStoreParentOrigin(origin) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function projectElementId(slug) {
+  return `project-${slug}`;
+}
+
+function saveCaseStudyReturnTarget(slug) {
+  if (isStoreEmbed()) return;
+
+  const payload = {
+    slug,
+    path: `${window.location.pathname}${window.location.search}`,
+    scrollY: Math.max(0, Math.round(window.scrollY)),
+    timestamp: Date.now(),
+  };
+
+  try {
+    sessionStorage.setItem(CASE_STUDY_RETURN_KEY, JSON.stringify(payload));
+    window.history.replaceState(
+      {
+        ...(window.history.state || {}),
+        jilanovCaseStudyReturn: payload,
+      },
+      '',
+      window.location.href,
+    );
+  } catch {
+    // Session storage can be unavailable in strict privacy contexts; default browser back still works.
+  }
+}
+
+function readCaseStudyReturnTarget() {
+  try {
+    const stateTarget = window.history.state?.jilanovCaseStudyReturn;
+    const storedTarget = sessionStorage.getItem(CASE_STUDY_RETURN_KEY);
+    const target = stateTarget || (storedTarget ? JSON.parse(storedTarget) : null);
+    if (!target || typeof target.slug !== 'string') return null;
+    if (`${window.location.pathname}${window.location.search}` !== target.path) return null;
+    if (Date.now() - Number(target.timestamp) > 30 * 60 * 1000) return null;
+    return target;
+  } catch {
+    return null;
+  }
+}
+
+function clearCaseStudyReturnTarget() {
+  try {
+    sessionStorage.removeItem(CASE_STUDY_RETURN_KEY);
+    if (window.history.state?.jilanovCaseStudyReturn) {
+      const { jilanovCaseStudyReturn, ...nextState } = window.history.state;
+      window.history.replaceState(nextState, '', window.location.href);
+    }
+  } catch {
+    // No-op; the return target is only a navigation convenience.
+  }
+}
+
+function scrollToProjectSlug(slug, fallbackScrollY = 0) {
+  const card = document.getElementById(projectElementId(slug));
+  const top = card
+    ? card.getBoundingClientRect().top + window.scrollY - 86
+    : Number(fallbackScrollY);
+
+  window.scrollTo({
+    top: Math.max(0, Math.round(top)),
+    behavior: 'auto',
+  });
 }
 
 const navItems = [
@@ -1000,6 +1068,60 @@ function useEmbeddedViewport() {
   return viewport;
 }
 
+function useCaseStudyReturnRestore(enabled) {
+  useEffect(() => {
+    if (!enabled) return undefined;
+
+    let frame = 0;
+    let timeout = 0;
+
+    const restore = () => {
+      const target = readCaseStudyReturnTarget();
+      if (!target) return;
+      scrollToProjectSlug(target.slug, target.scrollY);
+      clearCaseStudyReturnTarget();
+    };
+
+    const scheduleRestore = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      if (timeout) window.clearTimeout(timeout);
+
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        timeout = window.setTimeout(restore, 40);
+      });
+    };
+
+    scheduleRestore();
+    window.addEventListener('pageshow', scheduleRestore);
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      if (timeout) window.clearTimeout(timeout);
+      window.removeEventListener('pageshow', scheduleRestore);
+    };
+  }, [enabled]);
+}
+
+function useProjectHashScroll(enabled) {
+  useEffect(() => {
+    if (!enabled) return undefined;
+    if (!window.location.hash.startsWith('#project-')) return undefined;
+
+    let frame = window.requestAnimationFrame(() => {
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
+        target?.scrollIntoView({ block: 'start', behavior: 'auto' });
+      });
+    });
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [enabled]);
+}
+
 function App() {
   const isAdmin = window.location.pathname.startsWith('/admin');
   const caseStudySlug = window.location.pathname.match(/^\/case-studies\/([^/]+)/)?.[1];
@@ -1019,6 +1141,8 @@ function PublicSite() {
   const embedded = isStoreEmbed();
 
   useActiveSection(setActiveSection);
+  useCaseStudyReturnRestore(!embedded);
+  useProjectHashScroll(!embedded);
 
   useEffect(() => {
     activeCaseStudyRef.current = activeCaseStudySlug;
@@ -1220,12 +1344,13 @@ function MobileNav({ activeSection, menuOpen, setMenuOpen }) {
 function CaseStudyPage({ slug, embeddedOverlay = false, onClose, onContact }) {
   const project = projects.find((item) => item.slug === slug);
   const study = project ? caseStudies[project.slug] : null;
+  const selectedWorkHref = project ? `/#${projectElementId(project.slug)}` : '/#work';
   const renderBackControl = (track) => embeddedOverlay ? (
     <button type="button" className="case-back" onClick={onClose} data-track={track}>
       <ArrowLeft size={16} /> Back to selected work
     </button>
   ) : (
-    <a href="/#work" className="case-back" data-track={track}>
+    <a href={selectedWorkHref} className="case-back" data-track={track}>
       <ArrowLeft size={16} /> Back to selected work
     </a>
   );
@@ -1531,7 +1656,12 @@ function Work({ onOpenCaseStudy }) {
       </SectionHeader>
       <div className="project-grid">
         {projects.map((project, index) => (
-          <article className="project-card" key={project.title}>
+          <article
+            className="project-card"
+            id={projectElementId(project.slug)}
+            data-project-slug={project.slug}
+            key={project.title}
+          >
             <div className="project-content">
               <div className="project-topline">
                 <span>{String(index + 1).padStart(2, '0')}</span>
@@ -1579,10 +1709,23 @@ function Work({ onOpenCaseStudy }) {
                   className="secondary-button"
                   href={`/case-studies/${project.slug}`}
                   data-track={`case-study-${project.company}`}
-                  onClick={onOpenCaseStudy ? (event) => {
-                    event.preventDefault();
-                    onOpenCaseStudy(project.slug);
-                  } : undefined}
+                  onClick={(event) => {
+                    if (onOpenCaseStudy) {
+                      event.preventDefault();
+                      onOpenCaseStudy(project.slug);
+                      return;
+                    }
+
+                    if (
+                      event.button === 0 &&
+                      !event.metaKey &&
+                      !event.ctrlKey &&
+                      !event.shiftKey &&
+                      !event.altKey
+                    ) {
+                      saveCaseStudyReturnTarget(project.slug);
+                    }
+                  }}
                 >
                   Read the case study <ArrowRight size={15} />
                 </a>

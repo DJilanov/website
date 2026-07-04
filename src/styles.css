@@ -1009,6 +1009,7 @@ body[data-embedded='jilanov-store'] .hero {
   gap: 26px;
   overflow: hidden;
   padding: 28px;
+  scroll-margin-top: 86px;
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 

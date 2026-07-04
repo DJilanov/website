@@ -286,9 +286,28 @@ function referrerDomain(referrer) {
   }
 }
 
-function visitorHash(req) {
+function clientIp(req) {
   const forwarded = sanitizeString(req.headers['x-forwarded-for'] || '', 120).split(',')[0];
-  const ip = forwarded || req.socket.remoteAddress || 'local';
+  return forwarded || req.socket.remoteAddress || 'local';
+}
+
+function countryCodeFromHeaders(req) {
+  const candidates = [
+    req.headers['cf-ipcountry'],
+    req.headers['x-vercel-ip-country'],
+    req.headers['cloudfront-viewer-country'],
+    req.headers['x-country-code'],
+    req.headers['x-appengine-country']
+  ];
+  for (const raw of candidates) {
+    const value = sanitizeString(Array.isArray(raw) ? raw[0] : raw || '', 8).toUpperCase();
+    if (/^[A-Z]{2}$/.test(value) && value !== 'XX' && value !== 'T1') return value;
+  }
+  return '';
+}
+
+function visitorHash(req) {
+  const ip = clientIp(req);
   const ua = sanitizeString(req.headers['user-agent'] || '', 500);
   const day = new Date().toISOString().slice(0, 10);
   const salt = process.env.ANALYTICS_SALT || adminSecret;
@@ -296,8 +315,7 @@ function visitorHash(req) {
 }
 
 function ipHash(req) {
-  const forwarded = sanitizeString(req.headers['x-forwarded-for'] || '', 120).split(',')[0];
-  const ip = forwarded || req.socket.remoteAddress || 'local';
+  const ip = clientIp(req);
   const salt = process.env.ANALYTICS_SALT || adminSecret;
   return crypto.createHmac('sha256', salt).update(ip).digest('hex');
 }
@@ -395,13 +413,14 @@ function endpointUrl(endpoint, query = {}) {
   return url;
 }
 
-async function callRemoteApi(endpoint, { method = 'GET', token, body, query } = {}) {
+async function callRemoteApi(endpoint, { method = 'GET', token, body, query, headers = {} } = {}) {
   const response = await fetch(endpointUrl(endpoint, query), {
     method,
     headers: {
       Accept: 'application/json',
       ...(body ? { 'Content-Type': 'application/json' } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers
     },
     ...(body ? { body: JSON.stringify(body) } : {})
   });
@@ -483,6 +502,8 @@ function remoteAnalyticsPayload(event) {
       content: event.content || undefined,
       referrer: event.referrer || undefined,
       referrerDomain: event.referrerDomain || undefined,
+      ipHash: event.ipHash || undefined,
+      countryCode: event.countryCode || undefined,
       title: event.title || undefined,
       timezone: event.timezone || undefined,
       screen: event.screen || undefined
@@ -502,10 +523,17 @@ async function forwardStoreAnalyticsEvent(event) {
   }
 }
 
-async function saveRemoteStoreRequest(event, lead) {
+async function saveRemoteStoreRequest(event, lead, req) {
+  const ip = req ? clientIp(req) : '';
   await callRemoteApi(remoteContactEndpoint, {
     method: 'POST',
-    body: remoteContactPayload(event, lead)
+    body: remoteContactPayload(event, lead),
+    headers: ip
+      ? {
+          'X-Forwarded-For': ip,
+          'X-Real-IP': ip
+        }
+      : {}
   });
   return {
     id: event.id,
@@ -583,7 +611,7 @@ function requestRowToAdminLead(row) {
 
 async function saveStoreRequest(event, lead, req) {
   if (useRemoteApi) {
-    return saveRemoteStoreRequest(event, lead);
+    return saveRemoteStoreRequest(event, lead, req);
   }
 
   const db = await ensureDb();
@@ -868,6 +896,8 @@ function collectBaseEvent(req, body) {
     timezone: sanitizeString(body.timezone, 100),
     screen: sanitizeString(body.screen, 80),
     device: deviceFromUserAgent(req.headers['user-agent'] || ''),
+    ipHash: ipHash(req),
+    countryCode: countryCodeFromHeaders(req),
     metadata: sanitizeObject(body.metadata || {}, 32)
   };
 }

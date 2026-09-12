@@ -452,6 +452,7 @@ function remoteContactPayload(event, lead) {
     lead.projectType ? `Project type: ${lead.projectType}` : null,
     lead.budget ? `Budget: ${lead.budget}` : null,
     lead.timeline ? `Desired start: ${lead.timeline}` : null,
+    event.metadata?.contactSource ? `Contact CTA: ${event.metadata.contactSource}` : null,
     event.source ? `Source: ${event.source}` : null,
     event.medium ? `Medium: ${event.medium}` : null,
     event.campaign ? `Campaign: ${event.campaign}` : null,
@@ -1009,7 +1010,9 @@ app.post('/api/leads', async (req, res) => {
       package: body.package,
       projectType: body.projectType,
       budget: body.budget,
-      timeline: body.timeline
+      timeline: body.timeline,
+      contactSource: body.contactSource,
+      formContext: body.formContext
     }
   });
   const lead = leadFromBody(body);

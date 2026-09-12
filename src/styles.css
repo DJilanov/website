@@ -87,6 +87,10 @@ body[data-embedded='jilanov-store'] .side-nav {
   height: var(--embedded-viewport-height, 720px);
 }
 
+body[data-contact-modal='open'] {
+  overflow: hidden;
+}
+
 .case-modal-layer {
   pointer-events: none;
   position: absolute;
@@ -273,7 +277,24 @@ body[data-embedded='jilanov-store'] .side-nav {
   text-transform: uppercase;
 }
 
+.top-contact-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(57, 208, 177, 0.38);
+  border-radius: 8px;
+  background: rgba(57, 208, 177, 0.1);
+  padding: 0 12px;
+  color: #b7fff0;
+  cursor: pointer;
+  font-size: inherit;
+  font-weight: inherit;
+  text-transform: inherit;
+}
+
 .top-actions a:hover,
+.top-contact-button:hover,
 .side-nav a:hover {
   color: var(--accent);
 }
@@ -375,26 +396,35 @@ body[data-embedded='jilanov-store'] .side-nav {
   box-shadow: var(--shadow);
 }
 
-.mobile-nav a {
+.mobile-nav a,
+.mobile-nav button {
   display: flex;
   gap: 9px;
+  border: 0;
   border-radius: 6px;
+  background: transparent;
   padding: 12px;
   color: var(--muted);
+  cursor: pointer;
+  font: inherit;
   font-weight: 800;
+  text-align: left;
 }
 
-.mobile-nav a:hover {
+.mobile-nav a:hover,
+.mobile-nav button:hover {
   background: var(--panel);
   color: var(--accent);
 }
 
-.mobile-nav a.active {
+.mobile-nav a.active,
+.mobile-nav button.active {
   background: rgba(57, 208, 177, 0.1);
   color: var(--text);
 }
 
-.mobile-nav a.active span {
+.mobile-nav a.active span,
+.mobile-nav button.active span {
   color: var(--accent);
 }
 
@@ -1003,6 +1033,7 @@ body[data-embedded='jilanov-store'] .side-nav {
 .admin-panel,
 .admin-stat,
 .contact-aside,
+.contact-card,
 .lead-form,
 .signal-panel {
   border: 1px solid var(--line);
@@ -1435,6 +1466,25 @@ body[data-embedded='jilanov-store'] .side-nav {
   font-size: 0.84rem;
 }
 
+.project-actions.compact-proof {
+  margin-top: 18px;
+}
+
+.project-actions.compact-proof span {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  border: 1px solid rgba(242, 193, 78, 0.22);
+  border-radius: 7px;
+  background: rgba(242, 193, 78, 0.075);
+  padding: 0 11px;
+  color: var(--accent-2);
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
 .project-more {
   margin-top: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1679,12 +1729,18 @@ body[data-embedded='jilanov-store'] .side-nav {
   flex: 0 0 auto;
 }
 
-.package-card a {
+.package-card button {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  width: fit-content;
+  border: 0;
+  background: transparent;
+  padding: 0;
   margin-top: auto;
   color: var(--accent);
+  cursor: pointer;
+  font: inherit;
   font-weight: 850;
 }
 
@@ -1724,6 +1780,7 @@ body[data-embedded='jilanov-store'] .side-nav {
 }
 
 .contact-aside,
+.contact-card,
 .lead-form {
   padding: 24px;
 }
@@ -1758,6 +1815,183 @@ body[data-embedded='jilanov-store'] .side-nav {
 .contact-methods a:hover {
   border-color: var(--line-strong);
   color: var(--accent);
+}
+
+.contact-card {
+  display: grid;
+  align-content: center;
+  gap: 18px;
+}
+
+.contact-card h3 {
+  margin: 0;
+  font-size: 1.85rem;
+  line-height: 1.18;
+}
+
+.contact-card p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.72;
+}
+
+.contact-card .primary-button {
+  width: fit-content;
+}
+
+.contact-next-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.contact-next-steps div {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 12px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.contact-next-steps svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.contact-modal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 160;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.contact-modal-layer.embedded-contact-modal {
+  position: absolute;
+  top: var(--contact-modal-top, 0);
+  right: 0;
+  bottom: auto;
+  left: 0;
+  height: var(--contact-modal-height, 720px);
+}
+
+.contact-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(4, 8, 12, 0.78);
+  padding: 0;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+}
+
+.contact-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(1040px, calc(100vw - 48px));
+  max-height: min(900px, calc(100vh - 48px));
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: 0 30px 120px rgba(0, 0, 0, 0.55);
+}
+
+.embedded-contact-modal .contact-modal-panel {
+  max-height: 100%;
+}
+
+.contact-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(10, 15, 20, 0.92);
+  padding: 22px 24px;
+  backdrop-filter: blur(18px);
+}
+
+.contact-modal-header .panel-label {
+  margin: 0;
+}
+
+.contact-modal-header h2 {
+  margin: 8px 0 0;
+  font-size: 2rem;
+  line-height: 1.12;
+}
+
+.contact-modal-header p:not(.panel-label) {
+  max-width: 720px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.contact-modal-close {
+  flex: 0 0 auto;
+}
+
+.contact-modal-body {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 18px;
+  padding: 22px;
+}
+
+.contact-modal-aside {
+  align-self: start;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 18px;
+}
+
+.contact-modal-aside h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.contact-modal-aside ol {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0 0;
+  padding-left: 22px;
+}
+
+.contact-modal-aside li {
+  color: var(--accent);
+  font-weight: 850;
+}
+
+.contact-modal-aside li b,
+.contact-modal-aside li span {
+  display: block;
+}
+
+.contact-modal-aside li b {
+  color: var(--text);
+}
+
+.contact-modal-aside li span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.5;
 }
 
 .lead-form {
@@ -1817,6 +2051,29 @@ body[data-embedded='jilanov-store'] .side-nav {
 
 .lead-form .primary-button {
   width: fit-content;
+}
+
+.form-optional {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.form-optional-header {
+  display: grid;
+  gap: 3px;
+}
+
+.form-optional-header span {
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.form-optional-header small {
+  color: var(--faint);
+  line-height: 1.4;
 }
 
 .form-success,
@@ -2177,6 +2434,7 @@ body[data-embedded='jilanov-store'] .side-nav {
   .hero,
   .split-section,
   .contact-grid,
+  .contact-modal-body,
   .archive-band,
   .campaign-builder {
     grid-template-columns: 1fr;
@@ -2226,6 +2484,10 @@ body[data-embedded='jilanov-store'] .side-nav {
 
   .signal-panel {
     position: static;
+  }
+
+  .contact-next-steps {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -2297,6 +2559,12 @@ body[data-embedded='jilanov-store'] .side-nav {
   }
 
   .top-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .top-actions > a,
+  .top-actions .top-contact-button {
     display: none;
   }
 
@@ -2355,9 +2623,48 @@ body[data-embedded='jilanov-store'] .side-nav {
 
   .project-card,
   .archive-band,
+  .contact-card,
   .lead-form,
   .contact-aside {
     padding: 18px;
+  }
+
+  .contact-card .primary-button {
+    width: 100%;
+  }
+
+  .contact-modal-layer {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .contact-modal-panel {
+    width: 100%;
+    max-height: 100vh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .contact-modal-header {
+    padding: 16px;
+  }
+
+  .contact-modal-header h2 {
+    font-size: 1.55rem;
+  }
+
+  .contact-modal-body {
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .contact-modal-aside {
+    order: 2;
+    padding: 16px;
+  }
+
+  .contact-modal-body .lead-form {
+    order: 1;
   }
 
   .project-card h3 {

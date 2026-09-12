@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   Activity,
@@ -38,6 +38,7 @@ const STORE_EMBED_MODE = 'jilanov-store';
 const STORE_VIEWPORT_MESSAGE = 'jilanov-store:frame-viewport';
 const STORE_PARENT_ORIGIN_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
 const CASE_STUDY_RETURN_KEY = 'jilanov-case-study-return';
+const CONTACT_MODAL_HASH = '#contact-modal';
 
 function isStoreEmbed() {
   return new URLSearchParams(window.location.search).get('embed') === STORE_EMBED_MODE;
@@ -133,8 +134,480 @@ const metrics = [
   ['16+', 'years experience', 'from MVPs to enterprise systems'],
   ['147+', 'projects delivered', 'web, mobile, automation and Web3'],
   ['180k+', 'engineering hours', 'architecture, delivery, support'],
-  ['42+', 'shown cases', 'new and archived NDA-safe entries']
+  ['44+', 'shown cases', 'new and archived NDA-safe entries']
 ];
+
+const legacyPortfolioSeeds = [
+  {
+    slug: 'wynnbet',
+    company: 'WynnBet',
+    title: 'WynnBet Casino platform',
+    category: 'Gaming / casino platform',
+    image: '/assets/images/Software_Development/img/wynnbet.png',
+    summary: 'Casino platform delivery work for WynnBet, shown at portfolio-safe level because internal product details are restricted.',
+    stack: ['TypeScript', 'JavaScript', 'React', 'Node.js'],
+    role: 'Part of the GAN delivery team building casino systems.',
+    impact: ['Casino platform', 'React frontend', 'Node.js services', 'Partner delivery']
+  },
+  {
+    slug: 'twinspires',
+    company: 'TwinSpires',
+    title: 'TwinSpires Casino platform',
+    category: 'Gaming / casino platform',
+    image: '/assets/images/Software_Development/img/twinspires.png',
+    summary: 'Casino product work for TwinSpires with the public record limited to client, role, platform type and stack.',
+    stack: ['TypeScript', 'JavaScript', 'React', 'Node.js'],
+    role: 'Part of the GAN delivery team building casino systems.',
+    impact: ['Gaming flows', 'Platform UI', 'Node.js services', 'Team delivery']
+  },
+  {
+    slug: 'cordish',
+    company: 'Cordish',
+    title: 'Cordish Casino platform',
+    category: 'Gaming / casino platform',
+    image: '/assets/images/Software_Development/img/cordish.png',
+    summary: 'Casino platform delivery for Cordish with NDA-safe public scope and production engineering constraints.',
+    stack: ['TypeScript', 'JavaScript', 'React', 'Node.js'],
+    role: 'Part of the GAN delivery team building casino systems.',
+    impact: ['Casino platform', 'Frontend flows', 'Backend integration', 'Production delivery']
+  },
+  {
+    slug: 'rell-royale',
+    company: 'Rell Royale',
+    title: 'Rell Royale Casino platform',
+    category: 'Gaming / casino platform',
+    image: '/assets/images/Software_Development/img/rell-royale.png',
+    summary: 'Casino system delivery for Rell Royale with a public summary focused on product type, engineering role and stack.',
+    stack: ['TypeScript', 'JavaScript', 'React', 'Node.js'],
+    role: 'Part of the GAN delivery team building the Rell Royale casino systems.',
+    impact: ['Casino systems', 'React UI', 'Node.js APIs', 'GAN team']
+  },
+  {
+    slug: 'hp-smart',
+    company: 'HP',
+    title: 'HP Smart app',
+    category: 'Consumer mobile / printing',
+    image: '/assets/images/Software_Development/img/hp.png',
+    summary: 'Mobile app work around HP Smart print, scan, share and device flows for HP printers.',
+    stack: ['React Native', 'TypeScript', 'JavaScript'],
+    role: 'Work on mobile flows that make HP printer setup, printing, scanning and sharing easier for end users.',
+    impact: ['Print and scan', 'Mobile UX', 'Device flows', 'Consumer app']
+  },
+  {
+    slug: 'vmware-vsphere',
+    company: 'VMware',
+    title: 'VMware vSphere ecosystem work',
+    category: 'Enterprise / virtualization',
+    image: '/assets/images/Software_Development/img/vmware.png',
+    summary: 'Enterprise software delivery around VMware solutions and client software needs.',
+    stack: ['TypeScript', 'Node.js', 'JavaScript'],
+    role: 'Part of a center of excellence covering software needs for enterprise clients.',
+    impact: ['Enterprise delivery', 'Client systems', 'Node.js tooling', 'Virtualization']
+  },
+  {
+    slug: 'welltok',
+    company: 'Welltok',
+    title: 'Welltok health engagement platform',
+    category: 'Healthcare / engagement',
+    image: '/assets/images/Software_Development/img/welltok.png',
+    summary: 'Health engagement platform work focused on consumer actions, behavior change and web product delivery.',
+    stack: ['TypeScript', 'React', 'Node.js'],
+    role: 'Led web frontend development, helped backend work and worked closely with the client in daily coordination.',
+    impact: ['Health engagement', 'React frontend', 'Node.js support', 'Client collaboration']
+  },
+  {
+    slug: 'precisca',
+    company: 'Precisca',
+    title: 'Precisca cancer expert access platform',
+    category: 'Healthcare / expert access',
+    image: '/assets/images/Software_Development/img/precisca.png',
+    summary: 'Platform work around access to foremost cancer experts for specific cancer scenarios.',
+    stack: ['TypeScript', 'React', 'Node.js'],
+    role: 'Led web frontend development, helped backend work and worked closely with the client in daily coordination.',
+    impact: ['Expert access', 'Healthcare UX', 'React frontend', 'Node.js support']
+  },
+  {
+    slug: 'ecollect',
+    company: 'Ecollect',
+    title: 'Ecollect fintech solution',
+    category: 'Fintech / collections',
+    image: '/assets/images/Software_Development/img/ecollect.png',
+    summary: 'Fintech solution work for Ecollect, presented without internal product details.',
+    stack: ['TypeScript', 'React', 'Node.js'],
+    role: 'Led web frontend development, helped backend work and worked closely with the client in daily coordination.',
+    impact: ['Fintech workflow', 'React frontend', 'Node.js backend', 'Operational UX']
+  },
+  {
+    slug: 'paysixt',
+    company: 'PaySixt',
+    title: 'PaySixt fine payment solution',
+    category: 'Fintech / payments',
+    image: '/assets/images/Software_Development/img/paysixt.png',
+    summary: 'Payment workflow solution for Sixt fine payments with frontend and backend delivery responsibilities.',
+    stack: ['TypeScript', 'React', 'Node.js'],
+    role: 'Led web frontend development, helped backend work and worked closely with the client in daily coordination.',
+    impact: ['Payment workflow', 'Fine payment UX', 'React frontend', 'Node.js support']
+  },
+  {
+    slug: 'hebdoku',
+    company: 'HebDoku',
+    title: 'HebDoku COVID information app',
+    category: 'Healthcare / offline mobile',
+    image: '/assets/images/Software_Development/img/hebdoku.png',
+    summary: 'Mobile application that gives users the COVID-19 information they need, including a stable offline mode.',
+    stack: ['TypeScript', 'NativeScript', 'Node.js', 'Offline-first'],
+    role: 'Responsible for the application development and a stable solution with fully working offline mode.',
+    impact: ['COVID information', 'Offline mode', 'NativeScript mobile', 'Stable delivery']
+  },
+  {
+    slug: 'monaco-editor',
+    company: 'Microsoft Monaco Editor',
+    title: 'Monaco Editor open source contribution',
+    category: 'Open source / developer tools',
+    image: '/assets/images/Software_Development/img/monaco.png',
+    summary: 'Open source contribution work around the Monaco Editor, the code editor that powers VS Code.',
+    stack: ['TypeScript'],
+    role: 'Hacktoberfest 2018 contributions improving issue templates, copyright tags and git process.',
+    impact: ['Open source', 'Developer tooling', 'TypeScript', 'VS Code ecosystem']
+  },
+  {
+    slug: 'rampit',
+    company: 'Rampit',
+    title: 'Rampit component framework',
+    category: 'Framework / web delivery',
+    image: '/assets/images/Software_Development/img/rampit.png',
+    summary: 'Flexible component-based framework used to accelerate client website development.',
+    stack: ['Vue.js', 'TypeScript', 'JavaScript', 'Karma', 'Selenium'],
+    role: 'Responsible for development of the flexible component-based framework.',
+    impact: ['Component framework', 'Faster delivery', 'Vue.js', 'Automated testing']
+  },
+  {
+    slug: 'pwc-all-stars',
+    company: 'PwC',
+    title: 'PwC All-Stars App',
+    category: 'Sports / mobile app',
+    image: '/assets/images/Software_Development/img/gaaallstars2.png',
+    summary: 'Official PwC All-Stars mobile app with news, historical trivia and team-of-the-year selection flows.',
+    stack: ['NativeScript', 'TypeScript', 'SQLite', 'Karma', 'Selenium'],
+    role: 'Responsible for application development and a stable offline-capable mobile solution.',
+    impact: ['Sports content', 'Offline SQLite', 'NativeScript', 'Mobile voting UX']
+  },
+  {
+    slug: 'cryptobeast',
+    company: 'CryptoBeast',
+    title: 'CryptoBeast cryptocurrency market',
+    category: 'Crypto / marketplace',
+    image: '/assets/images/Software_Development/img/cryptobeast.png',
+    summary: 'Cryptocurrency market application built with Express.js and ReactJS for Motion Software.',
+    stack: ['React', 'Express.js', 'Node.js', 'Karma', 'Selenium'],
+    role: 'Helped with application development and integrations to online markets and data stores.',
+    impact: ['Crypto market', 'React UI', 'Express API', 'Market integrations']
+  },
+  {
+    slug: 'devolo-v2',
+    company: 'Devolo',
+    title: 'Devolo V2 home control system',
+    category: 'IoT / home control',
+    image: '/assets/images/Software_Development/img/devolo.png',
+    summary: 'Home control system work based on Angular and service integrations for Devolo.',
+    stack: ['Angular', 'TypeScript', 'JavaScript', 'Karma', 'Selenium'],
+    role: 'Led frontend development and converted a product brief into a working application.',
+    impact: ['Home control', 'Angular app', 'IoT UX', 'Test coverage']
+  },
+  {
+    slug: 'fourhundred',
+    company: '4hundred',
+    title: '4hundred green energy switching platform',
+    category: 'Energy / consumer platform',
+    image: '/assets/images/Software_Development/img/4hundred.png',
+    summary: 'Product work for a system helping users switch to green energy in Germany and planned expansion markets.',
+    stack: ['Angular', 'NativeScript', 'TypeScript', 'JavaScript', 'Karma'],
+    role: 'Led web frontend development, helped backend work and coordinated with the client daily.',
+    impact: ['Energy switching', 'Web and mobile', 'Consumer UX', 'Germany market']
+  },
+  {
+    slug: 'valeo-design',
+    company: 'Valeo',
+    title: 'Valeo design rules app',
+    category: 'Enterprise / design system',
+    image: '/assets/images/Software_Development/img/valeo.png',
+    summary: 'Compact mobile app for a large design team to access current design rules and keep an offline copy.',
+    stack: ['NativeScript', 'TypeScript', 'Node.js', 'Karma'],
+    role: 'Handled full development and delivered the solution within a month.',
+    impact: ['Design rules', 'Offline mobile', 'Admin editing', 'Enterprise team']
+  },
+  {
+    slug: 'sqore',
+    company: 'SQORE',
+    title: 'SQORE web and mobile rewrite',
+    category: 'Recruiting / web and mobile',
+    image: '/assets/images/Software_Development/img/sqore.png',
+    summary: 'Web and mobile rewrite for candidate and open-position workflows in a high-option recruiting product.',
+    stack: ['Angular', 'NativeScript', 'TypeScript', 'JavaScript', 'Karma'],
+    role: 'Rewrote the web product from AngularJS/CoffeeScript to modern Angular and the mobile apps to NativeScript.',
+    impact: ['Recruiting flows', 'Web rewrite', 'Mobile rewrite', 'Candidate UX']
+  },
+  {
+    slug: 'jira-report-widget',
+    company: 'Jira reporting',
+    title: 'Jira report widget',
+    category: 'Productivity / reporting',
+    image: '/assets/images/Software_Development/img/jira.png',
+    summary: 'Reporting tool that turns sprint and time-tracking data into the Excel report a PM needs.',
+    stack: ['Angular', 'TypeScript', 'Node.js', 'Karma'],
+    role: 'Handled full development and delivered the solution within a month.',
+    impact: ['Sprint reporting', 'Excel generation', 'Jira data', 'PM automation']
+  },
+  {
+    slug: 'montway',
+    company: 'Montway',
+    title: 'Montway route price widget',
+    category: 'Transport / embedded widget',
+    image: '/assets/images/Software_Development/img/montway.png',
+    summary: 'Small embeddable JavaScript widget for route selection and price calculation across transportation websites.',
+    stack: ['Vanilla JavaScript', 'Angular', 'Node.js', 'Karma'],
+    role: 'Handled full development and delivered the solution within a month.',
+    impact: ['Route pricing', 'Embeddable widget', 'Facade pattern', 'Transport UX']
+  },
+  {
+    slug: 'gambling-mobile-games',
+    company: 'OpenBet ecosystem',
+    title: 'Gambling mobile games',
+    category: 'Gaming / mobile games',
+    image: '/assets/images/Software_Development/img/casino.png',
+    summary: 'Canvas/CreateJS gambling applications used in online casinos and mobile casino apps.',
+    stack: ['CreateJS', 'JavaScript', 'Canvas', 'Selenium'],
+    role: 'Handled frontend development for games and worked from OpenBet offices in London.',
+    impact: ['Canvas games', 'Casino apps', 'Mobile UX', 'London delivery']
+  },
+  {
+    slug: 'dhl-price-calculator',
+    company: 'DHL',
+    title: 'DHL price calculator',
+    category: 'Logistics / pricing tool',
+    image: '/assets/images/Software_Development/img/dhl.png',
+    summary: 'Distance and price calculator work during DHL project migration toward newer Angular systems.',
+    stack: ['Angular', 'TypeScript', 'JavaScript', 'Selenium'],
+    role: 'Delivered the feature as contractors over a six-month engagement.',
+    impact: ['Distance pricing', 'Angular migration', 'Logistics UX', 'Contract delivery']
+  },
+  {
+    slug: 'globant-expenses',
+    company: 'Globant',
+    title: 'Globant expense tracking system',
+    category: 'Enterprise / expense tracking',
+    image: '/assets/images/Software_Development/img/globant.png',
+    summary: 'Expense tracking application for contractors on business trips, sending received bills to a central server.',
+    stack: ['Cordova', 'JavaScript', 'Node.js', 'Karma'],
+    role: 'Handled full development of the solution over a six-month engagement.',
+    impact: ['Expense capture', 'Mobile upload', 'Central processing', 'Contractor workflow']
+  },
+  {
+    slug: 'ovation-incentives',
+    company: 'Ovation Incentives',
+    title: 'Ovation Incentives sales system',
+    category: 'B2B sales / rewards',
+    image: '/assets/images/Software_Development/img/ovation.png',
+    summary: 'Single-page sales application used by Ovation Incentives to sell products to companies including Novell, Swisscom and BBC.',
+    stack: ['Cordova', 'JavaScript', 'Node.js', 'Karma'],
+    role: 'Handled full development and worked from the client office in London.',
+    impact: ['B2B sales', 'Reward products', 'SPA delivery', 'London delivery']
+  },
+  {
+    slug: 'cloudsigma',
+    company: 'CloudSigma',
+    title: 'CloudSigma web application',
+    category: 'Cloud / web application',
+    image: '/assets/images/Software_Development/img/cloudsigma.png',
+    summary: 'Main SPA improvements, API calls and WebSocket integrations for CloudSigma.',
+    stack: ['Backbone.js', 'JavaScript', 'REST APIs', 'WebSockets'],
+    role: 'Worked as contractors assisting the main startup development team in Zurich.',
+    impact: ['Cloud console', 'REST APIs', 'WebSockets', 'Zurich delivery']
+  },
+  {
+    slug: 'web-shop-cms',
+    company: 'Jilanov CMS',
+    title: 'Angular based web shop CMS system',
+    category: 'Ecommerce / CMS',
+    image: '/assets/images/Software_Development/img/jilanov.png',
+    summary: 'Automated CMS system for web stores with categories, carousel, images, page colors and product information managed from an admin panel.',
+    stack: ['Angular', 'NativeScript', 'TypeScript', 'Node.js'],
+    impact: ['Web store CMS', 'Admin panel', 'Catalog management', 'Theme controls']
+  },
+  {
+    slug: 'angular-web-boilerplate',
+    company: 'Jilanov Engineering',
+    title: 'Boilerplate for creation of web apps',
+    category: 'Developer tools / web',
+    image: '/assets/images/Software_Development/img/proj11.png',
+    summary: 'Open source Angular toolkit for faster prototyping and production web app development.',
+    stack: ['Angular', 'TypeScript', 'JavaScript'],
+    role: 'Built from scratch to help developers create responsive, stable web projects.',
+    impact: ['Open source', 'Angular toolkit', 'Web prototyping', 'Reusable components']
+  },
+  {
+    slug: 'nativescript-mobile-boilerplate',
+    company: 'Jilanov Engineering',
+    title: 'Boilerplate for creation of mobile apps',
+    category: 'Developer tools / mobile',
+    image: '/assets/images/Software_Development/img/proj10.png',
+    summary: 'Open source NativeScript toolkit for faster mobile app prototyping and reusable app structure.',
+    stack: ['NativeScript', 'TypeScript', 'JavaScript'],
+    role: 'Built from scratch to help developers create stable mobile projects.',
+    impact: ['Open source', 'NativeScript toolkit', 'Mobile prototyping', 'Reusable components']
+  },
+  {
+    slug: 'pingdom-data-fetcher',
+    company: 'Pingdom tooling',
+    title: 'Tool for easy data fetching from Pingdom',
+    category: 'Monitoring / integration tool',
+    image: '/assets/images/Software_Development/img/proj2.png',
+    summary: 'Configurable data fetcher that pulls monitored server information directly from the Pingdom API.',
+    stack: ['JavaScript', 'Node.js', 'API integration'],
+    role: 'Built to avoid manual API research and make status-page data fetching easier to reuse.',
+    impact: ['Pingdom API', 'Status data', 'Cron fetching', 'Monitoring integration']
+  },
+  {
+    slug: 'newrelic-data-fetcher',
+    company: 'New Relic tooling',
+    title: 'Tool for data fetching from New Relic',
+    category: 'Monitoring / integration tool',
+    image: '/assets/images/Software_Development/img/proj3.png',
+    summary: 'Configurable data fetcher that pulls monitoring information directly from the New Relic API.',
+    stack: ['JavaScript', 'Node.js', 'API integration'],
+    role: 'Built to make monitored data available for custom status and operations screens.',
+    impact: ['New Relic API', 'Monitoring data', 'Cron fetching', 'Status tooling']
+  },
+  {
+    slug: 'jquery-contribution',
+    company: 'jQuery',
+    title: 'Contributor to jQuery',
+    category: 'Open source / frontend',
+    image: '/assets/images/Software_Development/img/jquery.png',
+    summary: 'Open source contributions around filter and track algorithms in the early stages of jQuery development.',
+    stack: ['JavaScript', 'Open source'],
+    impact: ['Open source', 'Frontend algorithms', 'JavaScript', 'Community work']
+  },
+  {
+    slug: 'nativescript-contribution',
+    company: 'NativeScript',
+    title: 'Contributor to NativeScript',
+    category: 'Open source / mobile',
+    image: '/assets/images/Software_Development/img/nativescript.png',
+    summary: 'Open source NativeScript contribution work through bug reports and implementation suggestions.',
+    stack: ['JavaScript', 'NativeScript', 'Open source'],
+    impact: ['Open source', 'Mobile framework', 'Bug reports', 'Merged suggestions']
+  },
+  {
+    slug: 'tesseract-ocr-contribution',
+    company: 'Tesseract OCR',
+    title: 'Contributor to Tesseract OCR',
+    category: 'Open source / OCR',
+    image: '/assets/images/Software_Development/img/tesseract.png',
+    summary: 'Open source contribution work around Tesseract OCR through bug reports and improvement suggestions.',
+    stack: ['JavaScript', 'Open source'],
+    impact: ['Open source', 'OCR tooling', 'Bug reports', 'Quality improvements']
+  },
+  {
+    slug: 'softwaregroup-ut-framework',
+    company: 'Software Group',
+    title: 'Contributor to UT framework',
+    category: 'Enterprise / framework',
+    image: '/assets/images/Software_Development/img/softwaregroup.png',
+    summary: 'Framework improvement work around Under Tree and development of an AccessBank administration panel.',
+    stack: ['React', 'TypeScript', 'Node.js'],
+    role: 'Worked as contractors assisting the main company development team.',
+    impact: ['UT framework', 'AccessBank admin', 'React frontend', 'Contract delivery']
+  }
+];
+
+function includesAny(values, needles) {
+  const text = values.join(' ').toLowerCase();
+  return needles.some((needle) => text.includes(needle));
+}
+
+function uniqueList(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function buildLegacyArchitecture(seed) {
+  const stack = seed.stack || [];
+  const searchable = [seed.title, seed.category, seed.summary, seed.role || '', ...stack].join(' ').toLowerCase();
+  const isMobile = includesAny(stack, ['react native', 'nativescript', 'cordova']) || searchable.includes('mobile');
+  const isOpenSource = searchable.includes('open source') || searchable.includes('contributor');
+  const isGaming = includesAny([searchable], ['casino', 'gaming', 'gambling']);
+  const isFintech = includesAny([searchable], ['fintech', 'payment', 'fine']);
+  const isHealthcare = includesAny([searchable], ['health', 'cancer', 'covid']);
+  const isCloud = includesAny([searchable], ['cloud', 'vmware', 'websocket']);
+  const isTooling = includesAny([searchable], ['tool', 'widget', 'framework', 'boilerplate', 'cms', 'report']);
+  const server =
+    includesAny(stack, ['express']) ? 'Express.js API'
+      : includesAny(stack, ['node']) ? 'Node.js service'
+        : includesAny(stack, ['go']) ? 'Go service'
+          : includesAny(stack, ['php']) ? 'PHP integration service'
+            : isOpenSource ? 'Project repository'
+              : 'Application backend';
+  const panels = uniqueList([
+    isMobile ? 'Mobile app' : 'Web app',
+    isTooling ? 'Admin / tooling panel' : '',
+    isOpenSource ? 'Developer repository' : ''
+  ]);
+  const services = uniqueList([
+    includesAny(stack, ['sqlite']) ? 'SQLite offline store' : '',
+    includesAny(stack, ['websocket']) ? 'WebSocket channel' : '',
+    isGaming ? 'Gaming platform services' : '',
+    isFintech ? 'Payment workflow data' : '',
+    isHealthcare ? 'Healthcare workflow data' : '',
+    isCloud ? 'Cloud API data' : '',
+    isTooling ? 'Configuration database' : '',
+    isOpenSource ? 'Issue tracker / source control' : '',
+    'Operational logs'
+  ]).slice(0, 4);
+  const layers = [
+    ['Product surface', uniqueList([
+      isMobile ? 'Native mobile UX' : 'Browser UX',
+      isTooling ? 'Reusable components' : 'User workflows',
+      isGaming ? 'Casino UX constraints' : '',
+      isHealthcare ? 'Sensitive data flows' : ''
+    ]).slice(0, 3)],
+    ['Delivery', uniqueList([
+      stack[0] || 'Frontend engineering',
+      stack[1] || 'Backend engineering',
+      includesAny(stack, ['karma', 'selenium']) ? 'Automated QA' : 'Client collaboration'
+    ]).slice(0, 3)]
+  ];
+
+  return {
+    panels,
+    edge: ['Client deployment edge'],
+    server,
+    services,
+    layers,
+    note: 'Portfolio-safe architecture generated from archived project description; internal client details are intentionally omitted.'
+  };
+}
+
+function createLegacyProject(seed) {
+  return {
+    slug: seed.slug,
+    company: seed.company,
+    title: seed.title,
+    category: seed.category,
+    logo: seed.image,
+    summary: seed.summary,
+    impact: seed.impact || seed.stack.slice(0, 4),
+    stack: seed.stack,
+    proofPoints: uniqueList([
+      seed.role,
+      `Archived production work for ${seed.company} with public scope limited to client, product type and technology stack.`,
+      'Architecture and delivery notes are reconstructed from the archived portfolio description without exposing internal systems.'
+    ]),
+    architecture: buildLegacyArchitecture(seed),
+    nda: true
+  };
+}
+
+const legacyPortfolioProjects = legacyPortfolioSeeds.map(createLegacyProject);
 
 const projects = [
   {
@@ -286,6 +759,33 @@ const projects = [
     proof: 'https://seoimprove.net/'
   },
   {
+    slug: 'socialbee',
+    company: 'socialbee',
+    title: 'Impact recruiting automation for candidates, companies and reporting',
+    category: 'Nonprofit / operations automation',
+    logo: '/assets/logos/socialbee.webp',
+    summary:
+      'Operational product work for a German impact organization connecting refugees, migrants, companies, training and measurable employment outcomes.',
+    impact: ['Candidate workflows', 'Company pipeline', 'Impact reporting', 'Operations tooling'],
+    stack: ['TypeScript', 'React', 'Node.js', 'PostgreSQL', 'CRM workflows', 'Reporting'],
+    proofPoints: [
+      'Connects candidate intake, company coordination, qualification and internal follow-up work into one operational model.',
+      'Keeps reporting and impact data close to the workflow so teams can see what changed, not just what was entered.',
+      'Designed for real nonprofit operations where clarity, permissions and repeatable daily work matter.'
+    ],
+    architecture: {
+      panels: ['Operations panel', 'Admin panel'],
+      edge: ['nginx'],
+      server: 'Node.js service',
+      services: ['Postgres DB', 'Reporting data'],
+      layers: [
+        ['Workflows', ['Candidate intake', 'Company matching', 'Training follow-up']],
+        ['Operations', ['CRM views', 'Impact reporting', 'Team coordination']]
+      ]
+    },
+    proof: 'https://www.socialbee.org/'
+  },
+  {
     slug: 'thorwallet-defi',
     company: 'THORWallet',
     title: 'Mobile DeFi wallet experience',
@@ -369,7 +869,8 @@ const projects = [
         ['Engagement', ['Watch history', 'Subscriptions', 'Saved videos']]
       ]
     }
-  }
+  },
+  ...legacyPortfolioProjects
 ];
 
 const caseStudies = {
@@ -776,18 +1277,6 @@ const caseStudies = {
     ]
   }
 };
-const archiveProjects = [
-  ['VMware', 'vSphere ecosystem work', '/assets/work/vmware.png'],
-  ['HP', 'HP Smart app', '/assets/work/hp.png'],
-  ['ProSieben', 'Mobile apps', '/assets/work/prosieben.png'],
-  ['WynnBet', 'Casino platform', null],
-  ['TwinSpires', 'Casino platform', null],
-  ['PaySixt', 'Payment workflow solution', null],
-  ['Ecollect', 'Fintech solution', null],
-  ['Welltok', 'Health engagement platform', null],
-  ['Precisca', 'Cancer expertise access platform', null]
-];
-
 const buildTypes = [
   ['SaaS and portals', 'subscriptions, profiles, roles, payments, reports and operations', Layers3],
   ['Internal systems', 'CRM, ERP, DMS, warehouse, requests, documents and approvals', DatabaseZap],
@@ -964,23 +1453,6 @@ function postEmbeddedHeight() {
     },
     embeddedTargetOrigin(),
   );
-}
-
-function postEmbeddedScrollTo(targetId) {
-  if (window.parent === window || !isStoreEmbed()) return false;
-
-  const target = document.getElementById(targetId);
-  if (!target) return false;
-
-  const top = Math.max(0, Math.round(target.getBoundingClientRect().top + window.scrollY));
-  window.parent.postMessage(
-    {
-      type: 'jilanov-engineering:scroll-to',
-      top,
-    },
-    embeddedTargetOrigin(),
-  );
-  return true;
 }
 
 function useEmbeddedFrameHeight() {
@@ -1166,6 +1638,7 @@ function PublicSite() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(navItems[0][2]);
   const [activeCaseStudySlug, setActiveCaseStudySlug] = useState(null);
+  const [contactModal, setContactModal] = useState({ open: false, source: 'direct' });
   const embeddedViewport = useEmbeddedViewport();
   const activeCaseStudyRef = useRef(null);
   const modalHistoryRef = useRef(false);
@@ -1178,6 +1651,33 @@ function PublicSite() {
   useEffect(() => {
     activeCaseStudyRef.current = activeCaseStudySlug;
   }, [activeCaseStudySlug]);
+
+  const openContactModal = useCallback((source = 'direct') => {
+    setMenuOpen(false);
+    setContactModal({ open: true, source });
+    track('contact_modal_open', { source });
+  }, []);
+
+  const closeContactModal = useCallback(() => {
+    setContactModal((current) => (
+      current.open ? { ...current, open: false } : current
+    ));
+    if (window.location.hash === CONTACT_MODAL_HASH) {
+      window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}`);
+    }
+  }, []);
+
+  useEffect(() => {
+    const openFromHash = () => {
+      if (window.location.hash === CONTACT_MODAL_HASH) {
+        openContactModal('direct-link');
+      }
+    };
+
+    openFromHash();
+    window.addEventListener('hashchange', openFromHash);
+    return () => window.removeEventListener('hashchange', openFromHash);
+  }, [openContactModal]);
 
   useEffect(() => {
     if (!embedded) return undefined;
@@ -1227,42 +1727,52 @@ function PublicSite() {
     clearCaseStudyHash();
   };
 
-  const closeCaseStudyAndScrollToContact = () => {
+  const closeCaseStudyAndOpenContact = (source = 'case-study-contact') => {
     closeCaseStudy();
     window.setTimeout(() => {
-      if (!postEmbeddedScrollTo('contact')) {
-        document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      openContactModal(source);
     }, 140);
   };
 
   return (
     <div className="site-shell">
-      <TopBar menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
+      <TopBar menuOpen={menuOpen} setMenuOpen={setMenuOpen} onContact={openContactModal} />
       <SideNav activeSection={activeSection} />
-      <MobileNav activeSection={activeSection} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
+      <MobileNav
+        activeSection={activeSection}
+        menuOpen={menuOpen}
+        setMenuOpen={setMenuOpen}
+        onContact={openContactModal}
+      />
       <main className="main-content">
-        <Hero />
+        <Hero onContact={openContactModal} />
         <Metrics />
         <Work onOpenCaseStudy={embedded ? openCaseStudy : undefined} />
-        <AISection />
-        <BuildSection />
+        <AISection onContact={openContactModal} />
+        <BuildSection onContact={openContactModal} />
         <StackSection />
-        <Contact />
+        <Contact onContact={openContactModal} />
       </main>
       {activeCaseStudySlug && (
         <CaseStudyOverlay
           slug={activeCaseStudySlug}
           viewport={embeddedViewport}
           onClose={closeCaseStudy}
-          onContact={closeCaseStudyAndScrollToContact}
+          onContact={closeCaseStudyAndOpenContact}
+        />
+      )}
+      {contactModal.open && (
+        <ContactModal
+          source={contactModal.source}
+          viewport={embedded ? embeddedViewport : null}
+          onClose={closeContactModal}
         />
       )}
     </div>
   );
 }
 
-function TopBar({ menuOpen, setMenuOpen }) {
+function TopBar({ menuOpen, setMenuOpen, onContact }) {
   return (
     <header className="topbar">
       <a href="#hero" className="brand-mark" data-track="brand-home">
@@ -1273,7 +1783,14 @@ function TopBar({ menuOpen, setMenuOpen }) {
       </a>
       <nav className="top-actions">
         <a href="#work" data-track="top-work">Proof</a>
-        <a href="#contact" data-track="top-contact">Start a project →</a>
+        <button
+          type="button"
+          className="top-contact-button"
+          onClick={() => onContact('top-contact')}
+          data-track="top-contact"
+        >
+          Start a project <ArrowRight size={14} />
+        </button>
         <button className="icon-button mobile-only" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
           {menuOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
@@ -1349,12 +1866,29 @@ function SideNav({ activeSection }) {
   );
 }
 
-function MobileNav({ activeSection, menuOpen, setMenuOpen }) {
+function MobileNav({ activeSection, menuOpen, setMenuOpen, onContact }) {
   if (!menuOpen) return null;
   return (
     <div className="mobile-nav">
       {navItems.map(([num, label, href]) => {
         const isActive = activeSection === href;
+
+        if (href === '#contact') {
+          return (
+            <button
+              key={href}
+              type="button"
+              className={isActive ? 'active' : undefined}
+              aria-current={isActive ? 'location' : undefined}
+              onClick={() => {
+                setMenuOpen(false);
+                onContact('mobile-contact-nav');
+              }}
+            >
+              <span>{num}</span> {label}
+            </button>
+          );
+        }
 
         return (
           <a
@@ -1386,11 +1920,11 @@ function CaseStudyPage({ slug, embeddedOverlay = false, onClose, onContact }) {
     </a>
   );
   const renderContactControl = (className, track, label, iconSize = 15) => embeddedOverlay ? (
-    <button type="button" className={className} onClick={onContact} data-track={track}>
+    <button type="button" className={className} onClick={() => onContact?.(track)} data-track={track}>
       {label} <ArrowRight size={iconSize} />
     </button>
   ) : (
-    <a className={className} href="/#contact" data-track={track}>
+    <a className={className} href={`/${CONTACT_MODAL_HASH}`} data-track={track}>
       {label} <ArrowRight size={iconSize} />
     </a>
   );
@@ -1606,7 +2140,7 @@ function SectionHeader({ number, title, children }) {
   );
 }
 
-function Hero() {
+function Hero({ onContact }) {
   return (
     <section id="hero" className="hero section">
       <div className="hero-grid" />
@@ -1628,9 +2162,14 @@ function Hero() {
           SEO Improve, THORWallet, Gamium, ProSieben, VMware, HP and NDA-safe client systems.
         </p>
         <div className="hero-actions">
-          <a className="primary-button" href="#contact" data-track="hero-discuss">
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => onContact('hero-discuss')}
+            data-track="hero-discuss"
+          >
             Discuss a project <ArrowDownRight size={17} />
-          </a>
+          </button>
           <a className="secondary-button" href="#work" data-track="hero-work">
             See selected work <Eye size={17} />
           </a>
@@ -1686,7 +2225,10 @@ function Work({ onOpenCaseStudy }) {
         show enough evidence for a serious buyer to judge fit quickly.
       </SectionHeader>
       <div className="project-grid">
-        {projects.map((project, index) => (
+        {projects.map((project, index) => {
+          const hasCaseStudy = Boolean(caseStudies[project.slug]);
+
+          return (
           <article
             className="project-card"
             id={projectElementId(project.slug)}
@@ -1735,56 +2277,45 @@ function Work({ onOpenCaseStudy }) {
                   ))}
                 </div>
               </div>
-              <div className="project-actions">
-                <a
-                  className="secondary-button"
-                  href={`/case-studies/${project.slug}`}
-                  data-track={`case-study-${project.company}`}
-                  onClick={(event) => {
-                    if (onOpenCaseStudy) {
-                      event.preventDefault();
-                      onOpenCaseStudy(project.slug);
-                      return;
-                    }
+              {hasCaseStudy ? (
+                <div className="project-actions">
+                  <a
+                    className="secondary-button"
+                    href={`/case-studies/${project.slug}`}
+                    data-track={`case-study-${project.company}`}
+                    onClick={(event) => {
+                      if (onOpenCaseStudy) {
+                        event.preventDefault();
+                        onOpenCaseStudy(project.slug);
+                        return;
+                      }
 
-                    if (
-                      event.button === 0 &&
-                      !event.metaKey &&
-                      !event.ctrlKey &&
-                      !event.shiftKey &&
-                      !event.altKey
-                    ) {
-                      saveCaseStudyReturnTarget(project.slug);
-                    }
-                  }}
-                >
-                  Read the case study <ArrowRight size={15} />
-                </a>
-              </div>
+                      if (
+                        event.button === 0 &&
+                        !event.metaKey &&
+                        !event.ctrlKey &&
+                        !event.shiftKey &&
+                        !event.altKey
+                      ) {
+                        saveCaseStudyReturnTarget(project.slug);
+                      }
+                    }}
+                  >
+                    Read the case study <ArrowRight size={15} />
+                  </a>
+                </div>
+              ) : (
+                <div className="project-actions compact-proof">
+                  <span>NDA-safe card evidence</span>
+                </div>
+              )}
             </div>
             <div className="project-media">
               <ArchitectureDiagram project={project} />
             </div>
           </article>
-        ))}
-      </div>
-      <div className="archive-band">
-        <div>
-          <h3>NDA-safe production archive</h3>
-          <p>
-            Real production engagements across user flows, integrations, stability, support and
-            delivery inside teams with serious operational expectations.
-          </p>
-        </div>
-        <div className="archive-list">
-          {archiveProjects.map(([company, title, image]) => (
-            <div className="archive-item" key={`${company}-${title}`}>
-              {image ? <img src={image} alt="" /> : <BriefcaseBusiness size={18} />}
-              <span>{company}</span>
-              <small>{title}</small>
-            </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </section>
   );
@@ -1892,7 +2423,7 @@ function archIcon(item) {
   return <DatabaseZap size={15} />;
 }
 
-function AISection() {
+function AISection({ onContact }) {
   return (
     <section id="ai" className="section split-section">
       <div>
@@ -1942,15 +2473,20 @@ function AISection() {
           <div><Cpu size={18} /> system integrations</div>
           <div><Rocket size={18} /> launch and support</div>
         </div>
-        <a className="secondary-button panel-cta" href="#contact" data-track="ai-automation-review">
+        <button
+          type="button"
+          className="secondary-button panel-cta"
+          onClick={() => onContact('ai-automation-review')}
+          data-track="ai-automation-review"
+        >
           Discuss AI architecture <ArrowRight size={16} />
-        </a>
+        </button>
       </div>
     </section>
   );
 }
 
-function BuildSection() {
+function BuildSection({ onContact }) {
   return (
     <section id="build" className="section">
       <SectionHeader number="03" title="What Jilanov builds">
@@ -1976,7 +2512,13 @@ function BuildSection() {
                 <li key={bullet}><CheckCircle2 size={16} /> {bullet}</li>
               ))}
             </ul>
-            <a href="#contact" data-track={`package-${item.name}`}>{item.best} <ArrowRight size={15} /></a>
+            <button
+              type="button"
+              onClick={() => onContact(`package-${item.name}`)}
+              data-track={`package-${item.name}`}
+            >
+              {item.best} <ArrowRight size={15} />
+            </button>
           </article>
         ))}
       </div>
@@ -2007,7 +2549,7 @@ function StackSection() {
   );
 }
 
-function Contact() {
+function LeadForm({ formContext, contactSource }) {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
 
@@ -2017,7 +2559,12 @@ function Contact() {
     setError('');
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form).entries());
-    const payload = { ...analyticsPayload('lead_submit'), ...data };
+    const payload = {
+      ...analyticsPayload('lead_submit', { formContext, contactSource }),
+      ...data,
+      formContext,
+      contactSource
+    };
     const response = await fetch('/api/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2035,12 +2582,208 @@ function Contact() {
   }
 
   return (
+    <form className="lead-form" onSubmit={submit}>
+      <div className="form-grid">
+        <label>Name<input name="name" autoComplete="name" data-initial-focus required /></label>
+        <label>Email<input type="email" name="email" autoComplete="email" required /></label>
+        <label>Company<input name="company" autoComplete="organization" /></label>
+        <label>Phone<input type="tel" name="phone" autoComplete="tel" /></label>
+      </div>
+      <label>What should the project achieve?<textarea name="message" rows="5" required /></label>
+      <div className="form-optional">
+        <div className="form-optional-header">
+          <span>Optional context</span>
+          <small>Useful when budget, timeline or project shape is already known.</small>
+        </div>
+        <div className="form-grid">
+          <label>
+            Preferred package
+            <select name="package" defaultValue="Not sure">
+              <option>Discovery Sprint</option>
+              <option>MVP Build</option>
+              <option>Scale & Automate</option>
+              <option>Not sure</option>
+            </select>
+          </label>
+          <label>
+            Project type
+            <select name="projectType" defaultValue="SaaS / portal">
+              <option>SaaS / portal</option>
+              <option>Internal system</option>
+              <option>AI product / architecture</option>
+              <option>Mobile app</option>
+              <option>Ecommerce</option>
+              <option>EU project</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label>
+            Indicative budget
+            <select name="budget" defaultValue="not defined">
+              <option>under 5,000 EUR</option>
+              <option>5,000 - 15,000 EUR</option>
+              <option>15,000 - 50,000 EUR</option>
+              <option>50,000+ EUR</option>
+              <option>not defined</option>
+            </select>
+          </label>
+          <label>
+            Desired start
+            <select name="timeline" defaultValue="within 1 month">
+              <option>immediately</option>
+              <option>within 1 month</option>
+              <option>1-3 months</option>
+              <option>after 3+ months</option>
+              <option>research only</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <button className="primary-button" type="submit" disabled={status === 'sending'} data-track="lead-form-submit">
+        {status === 'sending' ? 'Sending...' : 'Send project brief'} <Send size={17} />
+      </button>
+      {status === 'sent' && <p className="form-success" role="status">Thanks. Your project brief has been received.</p>}
+      {error && <p className="form-error" role="alert">{error}</p>}
+    </form>
+  );
+}
+
+function ContactModal({ source, viewport, onClose }) {
+  const panelRef = useRef(null);
+  const modalStyle = viewport
+    ? {
+        '--contact-modal-top': `${viewport.top}px`,
+        '--contact-modal-height': `${viewport.height}px`,
+      }
+    : undefined;
+
+  useEffect(() => {
+    const previousFocus = document.activeElement;
+    const focusableSelector = [
+      'a[href]',
+      'button:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])'
+    ].join(',');
+
+    document.body.dataset.contactModal = 'open';
+
+    const focusInitialControl = window.requestAnimationFrame(() => {
+      const panel = panelRef.current;
+      const initialControl = panel?.querySelector('[data-initial-focus]');
+      if (initialControl instanceof HTMLElement) {
+        initialControl.focus();
+      }
+    });
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const panel = panelRef.current;
+      if (!panel) return;
+
+      const focusable = Array.from(panel.querySelectorAll(focusableSelector))
+        .filter((element) => element instanceof HTMLElement && element.getClientRects().length > 0);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.cancelAnimationFrame(focusInitialControl);
+      window.removeEventListener('keydown', handleKeyDown);
+      delete document.body.dataset.contactModal;
+      if (previousFocus instanceof HTMLElement) {
+        previousFocus.focus();
+      }
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className={`contact-modal-layer${viewport ? ' embedded-contact-modal' : ''}`}
+      style={modalStyle}
+    >
+      <button
+        type="button"
+        className="contact-modal-backdrop"
+        aria-label="Close contact form"
+        onClick={onClose}
+      />
+      <div
+        className="contact-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contact-modal-title"
+        ref={panelRef}
+      >
+        <header className="contact-modal-header">
+          <div>
+            <p className="panel-label">Project intake</p>
+            <h2 id="contact-modal-title">Start a focused project conversation</h2>
+            <p>
+              Share the business problem, constraints and what a successful first version should
+              prove. You will get a concrete next step, not a generic hourly quote.
+            </p>
+          </div>
+          <button type="button" className="icon-button contact-modal-close" onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </button>
+        </header>
+        <div className="contact-modal-body">
+          <aside className="contact-modal-aside" aria-label="What happens next">
+            <h3>What happens next</h3>
+            <ol>
+              <li>
+                <b>Brief reviewed</b>
+                <span>The business goal, constraints and likely delivery path are checked first.</span>
+              </li>
+              <li>
+                <b>Scope call</b>
+                <span>A short call clarifies users, systems, risks, budget and timing.</span>
+              </li>
+              <li>
+                <b>Concrete next step</b>
+                <span>You get a practical recommendation: sprint, MVP build, audit or no-fit.</span>
+              </li>
+            </ol>
+            <div className="contact-methods">
+              <a href="mailto:dimitar@jilanov.com" data-track="email-contact-modal"><Mail size={18} /> dimitar@jilanov.com</a>
+              <a href="tel:+359878466180" data-track="phone-contact-modal"><Phone size={18} /> +359 878 466 180</a>
+            </div>
+          </aside>
+          <LeadForm formContext="modal" contactSource={source} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Contact({ onContact }) {
+  return (
     <section id="contact" className="section contact-section">
       <SectionHeader number="05" title="Start a focused project conversation">
         Share the business problem, the current constraints and what a successful first version
-        should prove. You will get a concrete next step, not a generic hourly quote.
+        should prove. The full project brief opens in a focused modal from any major CTA.
       </SectionHeader>
-      <div className="contact-grid">
+      <div className="contact-grid contact-summary-grid">
         <div className="contact-aside">
           <h3>Good fit</h3>
           <p>
@@ -2049,67 +2792,33 @@ function Contact() {
           </p>
           <div className="contact-methods">
             <a href="mailto:dimitar@jilanov.com" data-track="email-contact"><Mail size={18} /> dimitar@jilanov.com</a>
-            <a href="tel:+359888283711" data-track="phone-contact"><Phone size={18} /> +359 888 283 711</a>
+            <a href="tel:+359878466180" data-track="phone-contact"><Phone size={18} /> +359 878 466 180</a>
             <a href="https://jilanov.com/en/info/software-development" data-track="source-site" target="_blank" rel="noreferrer">
               <ExternalLink size={18} /> Jilanov.com profile
             </a>
           </div>
         </div>
-        <form className="lead-form" onSubmit={submit}>
-          <div className="form-grid">
-            <label>Name<input name="name" autoComplete="name" required /></label>
-            <label>Company<input name="company" autoComplete="organization" /></label>
-            <label>Email<input type="email" name="email" autoComplete="email" required /></label>
-            <label>Phone<input type="tel" name="phone" autoComplete="tel" /></label>
-            <label>
-              Preferred package
-              <select name="package" defaultValue="Discovery Sprint">
-                <option>Discovery Sprint</option>
-                <option>MVP Build</option>
-                <option>Scale & Automate</option>
-                <option>Not sure</option>
-              </select>
-            </label>
-            <label>
-              Project type
-              <select name="projectType" defaultValue="SaaS / portal">
-                <option>SaaS / portal</option>
-                <option>Internal system</option>
-                <option>AI product / architecture</option>
-                <option>Mobile app</option>
-                <option>Ecommerce</option>
-                <option>EU project</option>
-                <option>Other</option>
-              </select>
-            </label>
-            <label>
-              Indicative budget
-              <select name="budget" defaultValue="not defined">
-                <option>under 5,000 EUR</option>
-                <option>5,000 - 15,000 EUR</option>
-                <option>15,000 - 50,000 EUR</option>
-                <option>50,000+ EUR</option>
-                <option>not defined</option>
-              </select>
-            </label>
-            <label>
-              Desired start
-              <select name="timeline" defaultValue="within 1 month">
-                <option>immediately</option>
-                <option>within 1 month</option>
-                <option>1-3 months</option>
-                <option>after 3+ months</option>
-                <option>research only</option>
-              </select>
-            </label>
+        <div className="contact-card">
+          <p className="panel-label">Project intake</p>
+          <h3>Ready when the project has a real business shape.</h3>
+          <p>
+            Open the brief from here or from any main CTA. The form asks only for the essentials
+            first, with optional context for budget, timeline and project type.
+          </p>
+          <div className="contact-next-steps">
+            <div><Clock3 size={18} /> Brief review</div>
+            <div><Users size={18} /> Scope call</div>
+            <div><Target size={18} /> Next-step recommendation</div>
           </div>
-          <label>What should the project achieve?<textarea name="message" rows="5" required /></label>
-          <button className="primary-button" type="submit" disabled={status === 'sending'} data-track="lead-form-submit">
-            {status === 'sending' ? 'Sending...' : 'Send project brief'} <Send size={17} />
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => onContact('bottom-contact')}
+            data-track="bottom-contact"
+          >
+            Start a project <Send size={17} />
           </button>
-          {status === 'sent' && <p className="form-success">Thanks. Your project brief has been received.</p>}
-          {error && <p className="form-error">{error}</p>}
-        </form>
+        </div>
       </div>
     </section>
   );

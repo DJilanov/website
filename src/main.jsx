@@ -134,7 +134,7 @@ const metrics = [
   ['16+', 'years experience', 'from MVPs to enterprise systems'],
   ['147+', 'projects delivered', 'web, mobile, automation and Web3'],
   ['180k+', 'engineering hours', 'architecture, delivery, support'],
-  ['44+', 'shown cases', 'selected and archived client work']
+  ['44+', 'shown cases', 'selected client product work']
 ];
 
 const legacyPortfolioSeeds = [
@@ -144,7 +144,7 @@ const legacyPortfolioSeeds = [
     title: 'WynnBet Casino platform',
     category: 'Gaming / casino platform',
     image: '/assets/images/Software_Development/img/wynnbet.png',
-    summary: 'Casino platform delivery work for WynnBet, presented as an archived client engagement with product type and delivery context.',
+    summary: 'Casino platform delivery work for WynnBet with product scope, engineering role and delivery context clearly presented.',
     stack: ['TypeScript', 'JavaScript', 'React', 'Node.js'],
     role: 'Part of the GAN delivery team building casino systems.',
     impact: ['Casino platform', 'React frontend', 'Node.js services', 'Partner delivery']
@@ -155,7 +155,7 @@ const legacyPortfolioSeeds = [
     title: 'TwinSpires Casino platform',
     category: 'Gaming / casino platform',
     image: '/assets/images/Software_Development/img/twinspires.png',
-    summary: 'Casino product work for TwinSpires, archived with the client, role, platform type and technology stack.',
+    summary: 'Casino product work for TwinSpires with the client surface, role, platform type and technology stack clearly mapped.',
     stack: ['TypeScript', 'JavaScript', 'React', 'Node.js'],
     role: 'Part of the GAN delivery team building casino systems.',
     impact: ['Gaming flows', 'Platform UI', 'Node.js services', 'Team delivery']
@@ -232,7 +232,7 @@ const legacyPortfolioSeeds = [
     title: 'Ecollect fintech solution',
     category: 'Fintech / collections',
     image: '/assets/images/Software_Development/img/ecollect.png',
-    summary: 'Fintech solution work for Ecollect, presented without internal product details.',
+    summary: 'Fintech workflow delivery for Ecollect with payment operations, React frontend work and Node.js backend integration.',
     stack: ['TypeScript', 'React', 'Node.js'],
     role: 'Led web frontend development, helped backend work and worked closely with the client in daily coordination.',
     impact: ['Fintech workflow', 'React frontend', 'Node.js backend', 'Operational UX']
@@ -592,21 +592,114 @@ function createLegacyProject(seed) {
     company: seed.company,
     title: seed.title,
     category: seed.category,
-    logo: seed.image,
+    image: seed.image,
     summary: seed.summary,
     impact: seed.impact || seed.stack.slice(0, 4),
     stack: seed.stack,
     proofPoints: uniqueList([
       seed.role,
-      `Archived production work for ${seed.company} with client, product type, responsibilities and technology stack documented.`,
-      'Architecture summary focuses on the product surface, integrations and delivery responsibilities.'
+      `Production work for ${seed.company} with product type, responsibilities and technology stack documented.`,
+      'Architecture view connects product surface, integrations and delivery responsibilities.'
     ]),
     architecture: buildLegacyArchitecture(seed),
+    visualZoom: seed.visualZoom || 1.62,
+    spotlightZoom: seed.spotlightZoom || 1.2,
     nda: true
   };
 }
 
 const legacyPortfolioProjects = legacyPortfolioSeeds.map(createLegacyProject);
+
+const projectFilters = [
+  { id: 'all', label: 'All work', terms: [] },
+  { id: 'ai', label: 'AI', terms: ['ai', 'claude', 'gemini', 'deepseek', 'career', 'seo intelligence'] },
+  { id: 'mobile', label: 'Mobile', terms: ['mobile', 'react native', 'expo', 'nativescript', 'cordova', 'ios', 'android'] },
+  { id: 'enterprise', label: 'Enterprise', terms: ['enterprise', 'erp', 'admin', 'operations', 'vmware', 'framework', 'cms', 'dashboard'] },
+  { id: 'fintech', label: 'Fintech', terms: ['fintech', 'payment', 'payments', 'credit', 'billing', 'sixt', 'bank'] },
+  { id: 'web3', label: 'Web3', terms: ['web3', 'wallet', 'defi', 'crypto', 'blockchain', 'thorchain'] },
+  { id: 'gaming', label: 'Gaming', terms: ['gaming', 'casino', 'gambling', 'openbet'] },
+  { id: 'healthcare', label: 'Healthcare', terms: ['health', 'healthcare', 'cancer', 'covid', 'welltok', 'precisca'] },
+  { id: 'logistics', label: 'Logistics', terms: ['logistics', 'transport', 'route', 'dhl', 'montway'] },
+  { id: 'tooling', label: 'Tooling', terms: ['tool', 'open source', 'widget', 'boilerplate', 'monaco', 'jquery', 'tesseract'] }
+];
+
+const visualSpotlightSlugs = ['credit-refresh', 'gigsy', 'walltopia-ewalls', 'thorwallet-defi'];
+
+function projectSearchText(project) {
+  return [
+    project.company,
+    project.title,
+    project.category,
+    project.summary,
+    ...(project.impact || []),
+    ...(project.stack || []),
+    ...(project.proofPoints || [])
+  ].join(' ').toLowerCase();
+}
+
+function projectMatchesFilter(project, filterId) {
+  if (filterId === 'all') return true;
+  const filter = projectFilters.find((item) => item.id === filterId);
+  if (!filter) return true;
+  const text = projectSearchText(project);
+  return filter.terms.some((term) => text.includes(term));
+}
+
+function projectVisual(project) {
+  return project.image || project.logo || '/assets/images/Software_Development/img/background.png';
+}
+
+function projectVisualMode(project) {
+  return project.image ? 'is-screenshot' : 'is-logo';
+}
+
+function projectVisualStyle(project) {
+  const style = {};
+  if (project.visualZoom) style['--visual-zoom'] = String(project.visualZoom);
+  if (project.visualPosition) style['--visual-position'] = project.visualPosition;
+  if (project.spotlightZoom) style['--spotlight-zoom'] = String(project.spotlightZoom);
+  if (project.spotlightPosition) style['--spotlight-position'] = project.spotlightPosition;
+  return style;
+}
+
+function projectDetailStudy(project) {
+  const surface = project.architecture?.panels?.join(', ') || 'Product surface';
+  const services = project.architecture?.services?.join(', ') || 'Operational systems';
+
+  return {
+    label: 'Project overview',
+    title: project.title,
+    subtitle: project.summary,
+    meta: project.impact.slice(0, 4),
+    facts: [
+      ['Client', project.company],
+      ['Category', project.category],
+      ['Surface', surface],
+      ['Stack', project.stack.slice(0, 4).join(', ')]
+    ],
+    sections: [
+      {
+        title: 'What the work shows',
+        bullets: project.proofPoints,
+      },
+      {
+        title: 'Product responsibilities',
+        bullets: project.impact,
+      },
+      {
+        title: 'Architecture focus',
+        paragraphs: [
+          `The system map focuses on the visible product surface, delivery edge, core service and supporting systems: ${services}.`,
+          'The important buyer signal is the same across these projects: product thinking, technical execution and operational delivery are connected.'
+        ]
+      },
+      {
+        title: 'Technology base',
+        bullets: project.stack,
+      },
+    ]
+  };
+}
 
 const projects = [
   {
@@ -615,6 +708,9 @@ const projects = [
     title: 'Credit dispute SaaS with monitoring, billing and admin operations',
     category: 'Credit repair SaaS / AI',
     logo: '/assets/logos/credit-refresh.png',
+    image: '/assets/work/credit-refresh.jpg',
+    visualZoom: 1.04,
+    spotlightZoom: 1,
     summary:
       'A production credit-repair product with Array credit report import, dispute attacks and rounds, PDF letters, Authorize.Net subscriptions, encrypted PII and admin review.',
     impact: ['Array reports', 'Dispute rounds', 'PDF letters', 'Authorize.Net billing'],
@@ -652,6 +748,9 @@ const projects = [
     title: 'Musician marketplace with mobile, venue and backoffice workflows',
     category: 'Music / booking platform',
     logo: '/assets/logos/gigsy.webp',
+    image: '/assets/work/gigsy.jpg',
+    visualZoom: 1.04,
+    spotlightZoom: 1,
     summary:
       'A marketplace where musicians discover gigs, venues manage events and applications, and operators handle the platform from a web backoffice.',
     impact: ['Musician app', 'Venue dashboard', 'Messaging', 'Applications'],
@@ -680,6 +779,11 @@ const projects = [
     title: 'Interactive climbing wall software with BLE route activation',
     category: 'Climbing tech / mobile',
     logo: '/assets/logos/walltopia.webp',
+    image: '/assets/work/walltopia-ewalls.png',
+    visualZoom: 1,
+    visualPosition: 'center 34%',
+    spotlightZoom: 1,
+    spotlightPosition: 'center 32%',
     summary:
       'A React Native app and NestJS backend for climbers, route setters and gym operators using Quantum Boards and eWalls LED hardware.',
     impact: ['BLE hardware', 'Route activation', 'WebSocket sync', 'Gym operations'],
@@ -708,6 +812,9 @@ const projects = [
     title: 'AI-native career platform with CV variants and application tracking',
     category: 'AI / career tooling',
     logo: '/assets/logos/aicv.webp',
+    image: '/assets/work/ai-cv.jpg',
+    visualZoom: 1.04,
+    spotlightZoom: 1,
     summary:
       'A career platform that imports a master profile, tailors CVs per job description, writes cover letters, exports documents and tracks applications.',
     impact: ['CV variants', 'Cover letters', 'Applications', 'Revolut billing'],
@@ -735,6 +842,9 @@ const projects = [
     title: 'SEO intelligence SaaS with scans, crawl, GSC and paid tier gates',
     category: 'SEO SaaS / AI',
     logo: '/assets/logos/seo-improve.webp',
+    image: '/assets/work/seo-improve.jpg',
+    visualZoom: 1.04,
+    spotlightZoom: 1,
     summary:
       'A SaaS product for technical scans, crawl analysis, keywords, backlinks, Google Search Console, reports, teams and AI-assisted SEO workflows.',
     impact: ['Technical scans', 'GSC OAuth', 'Keyword tiers', 'Adyen billing'],
@@ -763,6 +873,9 @@ const projects = [
     title: 'Impact recruiting automation for candidates, companies and reporting',
     category: 'Nonprofit / operations automation',
     logo: '/assets/logos/socialbee.webp',
+    image: '/assets/work/socialbee.jpg',
+    visualZoom: 1.04,
+    spotlightZoom: 1,
     summary:
       'Operational product work for a German impact organization connecting refugees, migrants, companies, training and measurable employment outcomes.',
     impact: ['Candidate workflows', 'Company pipeline', 'Impact reporting', 'Operations tooling'],
@@ -790,6 +903,9 @@ const projects = [
     title: 'Mobile DeFi wallet experience',
     category: 'Web3 / wallet',
     logo: '/assets/logos/thorwallet.png',
+    image: '/assets/work/thorwallet.jpg',
+    visualZoom: 1.04,
+    spotlightZoom: 1,
     summary:
       'Mobile wallet engineering across onboarding, vaults, swaps, pooling, savers, staking, WalletConnect and multi-chain asset operations.',
     impact: ['Multi-chain wallet', 'WalletConnect', 'Savers / pooling', 'Client-side signing'],
@@ -849,6 +965,8 @@ const projects = [
     title: 'YouTube-style media mobile app with GraphQL content delivery',
     category: 'Media / mobile',
     logo: '/assets/logos/prosieben.webp',
+    image: '/assets/work/prosieben.png',
+    visualZoom: 1.04,
     summary:
       'Media app case for a mobile video product with feeds, video detail screens, recommendations, search and backend content APIs.',
     impact: ['Video feeds', 'GraphQL API', 'Redis cache', 'Debian server'],
@@ -1907,7 +2025,7 @@ function MobileNav({ activeSection, menuOpen, setMenuOpen, onContact }) {
 
 function CaseStudyPage({ slug, embeddedOverlay = false, onClose, onContact }) {
   const project = projects.find((item) => item.slug === slug);
-  const study = project ? caseStudies[project.slug] : null;
+  const study = project ? caseStudies[project.slug] || projectDetailStudy(project) : null;
   const selectedWorkHref = project ? `/#${projectElementId(project.slug)}` : '/#work';
   const renderBackControl = (track) => embeddedOverlay ? (
     <button type="button" className="case-back" onClick={onClose} data-track={track}>
@@ -2005,8 +2123,13 @@ function CaseStudyPage({ slug, embeddedOverlay = false, onClose, onContact }) {
               ))}
             </div>
           </div>
-          <div className="case-architecture-panel">
-            <ArchitectureDiagram project={project} />
+          <div className="case-visual-stack">
+            <div className={`case-visual-card ${projectVisualMode(project)}`} style={projectVisualStyle(project)}>
+              <img src={projectVisual(project)} alt={`${project.company} project visual`} />
+            </div>
+            <div className="case-architecture-panel">
+              <ArchitectureDiagram project={project} />
+            </div>
           </div>
         </section>
 
@@ -2158,7 +2281,7 @@ function Hero({ onContact }) {
         </p>
         <p className="hero-proof">
           16+ years, 147+ delivered projects and production work across Walltopia, AI-CV,
-          SEO Improve, THORWallet, Gamium, ProSieben, VMware, HP and archived client systems.
+          SEO Improve, THORWallet, Gamium, ProSieben, VMware, HP and enterprise client systems.
         </p>
         <div className="hero-actions">
           <button
@@ -2217,102 +2340,229 @@ function Metrics() {
 }
 
 function Work({ onOpenCaseStudy }) {
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeSpotlightIndex, setActiveSpotlightIndex] = useState(0);
+  const visibleProjects = useMemo(
+    () => projects.filter((project) => projectMatchesFilter(project, activeFilter)),
+    [activeFilter],
+  );
+  const selectedFilter = projectFilters.find((filter) => filter.id === activeFilter) || projectFilters[0];
+  const spotlightProjects = useMemo(() => {
+    if (activeFilter === 'all') {
+      return visualSpotlightSlugs
+        .map((slug) => projects.find((project) => project.slug === slug))
+        .filter(Boolean);
+    }
+
+    const visualProjects = visibleProjects.filter((project) => project.image);
+    return (visualProjects.length >= 3 ? visualProjects : visibleProjects).slice(0, 4);
+  }, [activeFilter, visibleProjects]);
+  const activeSpotlightProject = spotlightProjects[activeSpotlightIndex] || spotlightProjects[0];
+
+  useEffect(() => {
+    setActiveSpotlightIndex(0);
+  }, [activeFilter]);
+
+  useEffect(() => {
+    if (activeSpotlightIndex < spotlightProjects.length) return;
+    setActiveSpotlightIndex(0);
+  }, [activeSpotlightIndex, spotlightProjects.length]);
+
+  const handleProjectOpen = (event, slug) => {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    if (onOpenCaseStudy) {
+      event.preventDefault();
+      onOpenCaseStudy(slug);
+      return;
+    }
+
+    saveCaseStudyReturnTarget(slug);
+  };
+
+  const showPreviousSpotlight = () => {
+    setActiveSpotlightIndex((current) => (
+      current === 0 ? spotlightProjects.length - 1 : current - 1
+    ));
+  };
+
+  const showNextSpotlight = () => {
+    setActiveSpotlightIndex((current) => (
+      current + 1 >= spotlightProjects.length ? 0 : current + 1
+    ));
+  };
+
   return (
-    <section id="work" className="section">
-      <SectionHeader number="01" title="Selected Work">
-        Public products and archived client work are shown together. The goal is simple:
-        show enough evidence for a serious buyer to judge fit quickly.
-      </SectionHeader>
-      <div className="project-grid">
-        {projects.map((project, index) => {
-          const hasCaseStudy = Boolean(caseStudies[project.slug]);
+    <section id="work" className="section work-section">
+      <div className="work-heading-row">
+        <SectionHeader number="01" title="Selected product work">
+          Product builds across ecommerce, fintech, AI, mobile, enterprise operations and
+          high-traffic consumer platforms. Open a project for the delivery story, stack and
+          architecture map.
+        </SectionHeader>
+        <div className="work-count-card">
+          <strong>{visibleProjects.length}</strong>
+          <span>{selectedFilter.label}</span>
+        </div>
+      </div>
+
+      {activeSpotlightProject ? (
+        <div className="project-spotlight-carousel" aria-label="Featured project carousel">
+          <div className="project-spotlight-stage">
+            <a
+              className={`project-spotlight-card ${projectVisualMode(activeSpotlightProject)}`}
+              href={`/case-studies/${activeSpotlightProject.slug}`}
+              key={activeSpotlightProject.slug}
+              style={projectVisualStyle(activeSpotlightProject)}
+              onClick={(event) => handleProjectOpen(event, activeSpotlightProject.slug)}
+              data-track={`project-spotlight-${activeSpotlightProject.company}`}
+            >
+              <img
+                src={projectVisual(activeSpotlightProject)}
+                alt={`${activeSpotlightProject.company} project visual`}
+                loading="eager"
+              />
+              <span className="project-spotlight-shade" />
+              <span className="project-spotlight-copy">
+                <small>{activeSpotlightProject.category}</small>
+                <b>{activeSpotlightProject.title}</b>
+                <em>{activeSpotlightProject.summary}</em>
+                <span>Open architecture <ArrowRight size={14} /></span>
+              </span>
+            </a>
+            {spotlightProjects.length > 1 ? (
+              <div className="project-spotlight-controls" aria-label="Carousel controls">
+                <button type="button" onClick={showPreviousSpotlight} aria-label="Previous featured project">
+                  <ArrowLeft size={16} />
+                </button>
+                <span>{String(activeSpotlightIndex + 1).padStart(2, '0')} / {String(spotlightProjects.length).padStart(2, '0')}</span>
+                <button type="button" onClick={showNextSpotlight} aria-label="Next featured project">
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          {spotlightProjects.length > 1 ? (
+            <div className="project-spotlight-rail" role="tablist" aria-label="Featured project selection">
+              {spotlightProjects.map((project, index) => {
+                const selected = index === activeSpotlightIndex;
+
+                return (
+                  <button
+                    type="button"
+                    className={`project-spotlight-thumb ${selected ? 'active' : ''}`}
+                    key={project.slug}
+                    onClick={() => setActiveSpotlightIndex(index)}
+                    role="tab"
+                    aria-selected={selected}
+                    aria-label={`Show ${project.company}`}
+                  >
+                    <img src={projectVisual(project)} alt="" loading="lazy" />
+                    <span>
+                      <b>{project.company}</b>
+                      <small>{project.category}</small>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="project-filter-bar" role="tablist" aria-label="Filter projects by domain">
+        {projectFilters.map((filter) => {
+          const count = projects.filter((project) => projectMatchesFilter(project, filter.id)).length;
+          const selected = activeFilter === filter.id;
 
           return (
-          <article
-            className="project-card"
-            id={projectElementId(project.slug)}
-            data-project-slug={project.slug}
-            key={project.title}
-          >
-            <div className="project-content">
-              <div className="project-topline">
-                <span>{String(index + 1).padStart(2, '0')}</span>
-                <i />
-                <small>{project.category}</small>
-              </div>
-              <div className="project-logo-row">
-                {project.logo ? (
-                  <img src={project.logo} alt={`${project.company} logo`} />
-                ) : (
-                  <div className="brand-fallback" aria-label={project.company}>
-                    {project.company}
-                  </div>
-                )}
-                {project.proof && (
-                  <a href={project.proof} target="_blank" rel="noreferrer" data-track={`proof-${project.company}`}>
-                    proof <ExternalLink size={13} />
-                  </a>
-                )}
-              </div>
-              <h3>{project.title}</h3>
-              <p>{project.summary}</p>
-              <div className="tag-row">
-                {project.impact.map((item) => (
-                  <span key={item}>{item}</span>
-                ))}
-              </div>
-              <ul className="project-proof-list">
-                {project.proofPoints.map((item) => (
-                  <li key={item}>
-                    <CheckCircle2 size={15} /> {item}
-                  </li>
-                ))}
-              </ul>
-              <div className="tech-stack-row">
-                <b>Tech stack</b>
-                <div>
-                  {project.stack.map((item) => (
+            <button
+              key={filter.id}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              className={selected ? 'active' : undefined}
+              onClick={() => setActiveFilter(filter.id)}
+            >
+              <span>{filter.label}</span>
+              <b>{count}</b>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="project-grid">
+        {visibleProjects.map((project, index) => {
+          const hasCaseStudy = Boolean(caseStudies[project.slug]);
+          const link = `/case-studies/${project.slug}`;
+
+          return (
+            <article
+              className={`project-card project-showcase-card${hasCaseStudy ? ' is-featured' : ''}`}
+              id={projectElementId(project.slug)}
+              data-project-slug={project.slug}
+              key={project.slug}
+            >
+              <a
+                className={`project-visual-link ${projectVisualMode(project)}`}
+                href={link}
+                style={projectVisualStyle(project)}
+                aria-label={`Open ${project.company} project overview`}
+                data-track={`project-visual-${project.company}`}
+                onClick={(event) => handleProjectOpen(event, project.slug)}
+              >
+                <img src={projectVisual(project)} alt={`${project.company} project visual`} loading={index < 6 ? 'eager' : 'lazy'} />
+                <span className="project-visual-overlay">
+                  <b>{hasCaseStudy ? 'Full case study' : 'Project overview'}</b>
+                  <small>View architecture <ArrowRight size={13} /></small>
+                </span>
+              </a>
+
+              <div className="project-card-body">
+                <div className="project-mini-meta">
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  <small>{project.category}</small>
+                </div>
+                <div className="project-logo-row compact">
+                  {project.logo ? (
+                    <img src={project.logo} alt={`${project.company} logo`} />
+                  ) : (
+                    <div className="brand-fallback" aria-label={project.company}>{project.company}</div>
+                  )}
+                  {project.proof && (
+                    <a href={project.proof} target="_blank" rel="noreferrer" data-track={`proof-${project.company}`}>
+                      Source <ExternalLink size={13} />
+                    </a>
+                  )}
+                </div>
+                <h3>{project.title}</h3>
+                <p>{project.summary}</p>
+                <div className="tag-row compact">
+                  {project.impact.slice(0, 3).map((item) => (
                     <span key={item}>{item}</span>
                   ))}
                 </div>
-              </div>
-              {hasCaseStudy ? (
-                <div className="project-actions">
+                <div className="project-card-footer">
                   <a
-                    className="secondary-button"
-                    href={`/case-studies/${project.slug}`}
+                    href={link}
                     data-track={`case-study-${project.company}`}
-                    onClick={(event) => {
-                      if (onOpenCaseStudy) {
-                        event.preventDefault();
-                        onOpenCaseStudy(project.slug);
-                        return;
-                      }
-
-                      if (
-                        event.button === 0 &&
-                        !event.metaKey &&
-                        !event.ctrlKey &&
-                        !event.shiftKey &&
-                        !event.altKey
-                      ) {
-                        saveCaseStudyReturnTarget(project.slug);
-                      }
-                    }}
+                    onClick={(event) => handleProjectOpen(event, project.slug)}
                   >
-                    Read the case study <ArrowRight size={15} />
+                    Open project <ArrowRight size={15} />
                   </a>
+                  <span>{project.stack.slice(0, 2).join(' / ')}</span>
                 </div>
-              ) : (
-                <div className="project-actions compact-proof">
-                  <span>Project overview</span>
-                </div>
-              )}
-            </div>
-            <div className="project-media">
-              <ArchitectureDiagram project={project} />
-            </div>
-          </article>
+              </div>
+            </article>
           );
         })}
       </div>

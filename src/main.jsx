@@ -134,7 +134,7 @@ const metrics = [
   ['16+', 'years experience', 'from MVPs to enterprise systems'],
   ['147+', 'projects delivered', 'web, mobile, automation and Web3'],
   ['180k+', 'engineering hours', 'architecture, delivery, support'],
-  ['44+', 'shown cases', 'new and archived NDA-safe entries']
+  ['44+', 'shown cases', 'selected and archived client work']
 ];
 
 const legacyPortfolioSeeds = [
@@ -144,7 +144,7 @@ const legacyPortfolioSeeds = [
     title: 'WynnBet Casino platform',
     category: 'Gaming / casino platform',
     image: '/assets/images/Software_Development/img/wynnbet.png',
-    summary: 'Casino platform delivery work for WynnBet, shown at portfolio-safe level because internal product details are restricted.',
+    summary: 'Casino platform delivery work for WynnBet, presented as an archived client engagement with product type and delivery context.',
     stack: ['TypeScript', 'JavaScript', 'React', 'Node.js'],
     role: 'Part of the GAN delivery team building casino systems.',
     impact: ['Casino platform', 'React frontend', 'Node.js services', 'Partner delivery']
@@ -155,7 +155,7 @@ const legacyPortfolioSeeds = [
     title: 'TwinSpires Casino platform',
     category: 'Gaming / casino platform',
     image: '/assets/images/Software_Development/img/twinspires.png',
-    summary: 'Casino product work for TwinSpires with the public record limited to client, role, platform type and stack.',
+    summary: 'Casino product work for TwinSpires, archived with the client, role, platform type and technology stack.',
     stack: ['TypeScript', 'JavaScript', 'React', 'Node.js'],
     role: 'Part of the GAN delivery team building casino systems.',
     impact: ['Gaming flows', 'Platform UI', 'Node.js services', 'Team delivery']
@@ -166,7 +166,7 @@ const legacyPortfolioSeeds = [
     title: 'Cordish Casino platform',
     category: 'Gaming / casino platform',
     image: '/assets/images/Software_Development/img/cordish.png',
-    summary: 'Casino platform delivery for Cordish with NDA-safe public scope and production engineering constraints.',
+    summary: 'Casino platform delivery for Cordish with production engineering constraints and a clear delivery role.',
     stack: ['TypeScript', 'JavaScript', 'React', 'Node.js'],
     role: 'Part of the GAN delivery team building casino systems.',
     impact: ['Casino platform', 'Frontend flows', 'Backend integration', 'Production delivery']
@@ -177,7 +177,7 @@ const legacyPortfolioSeeds = [
     title: 'Rell Royale Casino platform',
     category: 'Gaming / casino platform',
     image: '/assets/images/Software_Development/img/rell-royale.png',
-    summary: 'Casino system delivery for Rell Royale with a public summary focused on product type, engineering role and stack.',
+    summary: 'Casino system delivery for Rell Royale with the product type, engineering role and stack clearly documented.',
     stack: ['TypeScript', 'JavaScript', 'React', 'Node.js'],
     role: 'Part of the GAN delivery team building the Rell Royale casino systems.',
     impact: ['Casino systems', 'React UI', 'Node.js APIs', 'GAN team']
@@ -583,7 +583,6 @@ function buildLegacyArchitecture(seed) {
     server,
     services,
     layers,
-    note: 'Portfolio-safe architecture generated from archived project description; internal client details are intentionally omitted.'
   };
 }
 
@@ -599,8 +598,8 @@ function createLegacyProject(seed) {
     stack: seed.stack,
     proofPoints: uniqueList([
       seed.role,
-      `Archived production work for ${seed.company} with public scope limited to client, product type and technology stack.`,
-      'Architecture and delivery notes are reconstructed from the archived portfolio description without exposing internal systems.'
+      `Archived production work for ${seed.company} with client, product type, responsibilities and technology stack documented.`,
+      'Architecture summary focuses on the product surface, integrations and delivery responsibilities.'
     ]),
     architecture: buildLegacyArchitecture(seed),
     nda: true
@@ -851,7 +850,7 @@ const projects = [
     category: 'Media / mobile',
     logo: '/assets/logos/prosieben.webp',
     summary:
-      'Portfolio-safe media app case for a mobile video product with feeds, video detail screens, recommendations, search and backend content APIs.',
+      'Media app case for a mobile video product with feeds, video detail screens, recommendations, search and backend content APIs.',
     impact: ['Video feeds', 'GraphQL API', 'Redis cache', 'Debian server'],
     stack: ['JavaScript', 'React Native', 'GraphQL', 'PostgreSQL', 'Redis', 'Apache2', 'Debian'],
     proofPoints: [
@@ -1230,7 +1229,7 @@ const caseStudies = {
     label: 'Case study / Media mobile apps',
     title: 'Designing a YouTube-style mobile video app on GraphQL, Redis, PostgreSQL and Debian',
     subtitle:
-      'This is an NDA-safe media-app case description based on the stack: a mobile video product with feeds, search, video detail, engagement state, GraphQL composition, Redis caching, PostgreSQL and Apache2 on Debian.',
+      'This media-app case description is based on the stack: a mobile video product with feeds, search, video detail, engagement state, GraphQL composition, Redis caching, PostgreSQL and Apache2 on Debian.',
     meta: ['Mobile video product', 'GraphQL API', 'Redis cache', 'Apache2 / Debian'],
     facts: [
       ['Product surface', 'Mobile app'],
@@ -2159,7 +2158,7 @@ function Hero({ onContact }) {
         </p>
         <p className="hero-proof">
           16+ years, 147+ delivered projects and production work across Walltopia, AI-CV,
-          SEO Improve, THORWallet, Gamium, ProSieben, VMware, HP and NDA-safe client systems.
+          SEO Improve, THORWallet, Gamium, ProSieben, VMware, HP and archived client systems.
         </p>
         <div className="hero-actions">
           <button
@@ -2221,7 +2220,7 @@ function Work({ onOpenCaseStudy }) {
   return (
     <section id="work" className="section">
       <SectionHeader number="01" title="Selected Work">
-        Publicly verifiable products first, then NDA-safe production work. The goal is simple:
+        Public products and archived client work are shown together. The goal is simple:
         show enough evidence for a serious buyer to judge fit quickly.
       </SectionHeader>
       <div className="project-grid">
@@ -2306,7 +2305,7 @@ function Work({ onOpenCaseStudy }) {
                 </div>
               ) : (
                 <div className="project-actions compact-proof">
-                  <span>NDA-safe card evidence</span>
+                  <span>Project overview</span>
                 </div>
               )}
             </div>
